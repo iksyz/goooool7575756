@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+:root {
+  --pitch-1: #16a34a;
+  --pitch-2: #15803d;
+  --pitch-line: rgba(248, 250, 252, 0.32);
+  --pitch-vignette: rgba(0, 0, 0, 0.12);
+}
+
+html[data-pitch="dark"] {
+  --pitch-1: #0b7a34;
+  --pitch-2: #075d27;
+  --pitch-line: rgba(248, 250, 252, 0.22);
+  --pitch-vignette: rgba(0, 0, 0, 0.22);
+}
+
+.pitch-background {
+  background:
+    radial-gradient(1200px circle at 50% 0%, rgba(250, 204, 21, 0.14), transparent 55%),
+    radial-gradient(900px circle at 20% 30%, rgba(37, 99, 235, 0.10), transparent 55%),
+    radial-gradient(1200px circle at 80% 60%, rgba(255, 255, 255, 0.10), transparent 60%),
+    repeating-linear-gradient(90deg,
+      var(--pitch-1) 0px,
+      var(--pitch-1) 28px,
+      var(--pitch-2) 28px,
+      var(--pitch-2) 56px),
+    repeating-linear-gradient(0deg,
+      transparent 0px,
+      transparent 96px,
+      var(--pitch-line) 96px,
+      var(--pitch-line) 98px);
+  background-blend-mode: screen, screen, screen, normal, normal;
+}
+
+.pitch-vignette {
+  background: radial-gradient(circle at 50% 40%, transparent 45%, var(--pitch-vignette) 100%);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: transparent;
+  color: #052e16;
+  font-family: var(--font-inter);
+  position: relative;
+}
