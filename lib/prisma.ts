@@ -1,10 +1,8 @@
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client/edge";
-import { Pool } from "@neondatabase/serverless";
 
 type GlobalForPrisma = {
     prisma?: PrismaClient;
-    pool?: Pool;
 };
 
 const globalForPrisma = globalThis as unknown as GlobalForPrisma;
@@ -14,8 +12,7 @@ if (!connectionString) {
     throw new Error("DATABASE_URL is not set");
 }
 
-const pool = globalForPrisma.pool ?? new Pool({ connectionString });
-const adapter = new PrismaNeon(pool);
+const adapter = new PrismaNeon({ connectionString });
 
 export const prisma =
     globalForPrisma.prisma ??
@@ -26,5 +23,4 @@ export const prisma =
 
 if (process.env.NODE_ENV !== "production") {
     globalForPrisma.prisma = prisma;
-    globalForPrisma.pool = pool;
 }
