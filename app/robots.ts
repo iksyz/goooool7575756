@@ -1,0 +1,24 @@
+import type { MetadataRoute } from "next";
+
+const FALLBACK_SITE_URL = "https://goaltrivia.com";
+
+function getSiteUrl() {
+    const fromEnv = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL;
+    if (!fromEnv) return FALLBACK_SITE_URL;
+    return fromEnv.replace(/\/+$/, "");
+}
+
+export default function robots(): MetadataRoute.Robots {
+    const siteUrl = getSiteUrl();
+
+    return {
+        rules: [
+            {
+                userAgent: "*",
+                allow: "/",
+                disallow: ["/api/", "/admin"],
+            },
+        ],
+        sitemap: `${siteUrl}/sitemap.xml`,
+    };
+}
