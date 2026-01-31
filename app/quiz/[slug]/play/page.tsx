@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Script from "next/script";
 
 import quizzes from "@/data/quizzes.json";
 import { QuizStartGate } from "@/components/quiz/QuizStartGate";
@@ -93,6 +94,12 @@ function wordCount(text: string) {
     return text.split(/\s+/).filter(Boolean).length;
 }
 
+function toMetaDescription(input: string) {
+    const cleaned = input.replace(/\s+/g, " ").trim();
+    if (cleaned.length <= 160) return cleaned;
+    return `${cleaned.slice(0, 157).trim()}...`;
+}
+
 type PageProps = {
     params: Promise<{ slug: string }>;
 };
@@ -119,10 +126,39 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         quiz.seoContent && wordCount(quiz.seoContent) >= 400
             ? quiz.seoContent
             : buildSeoText({ quiz, questionCount, minutes });
+    const description = toMetaDescription(quiz.seoDescription || seoLong);
+
+    const derivedKeywords = uniqueKeywords([
+        quiz.title,
+        quiz.league,
+        quiz.category,
+        quiz.difficulty,
+        ...(quiz.seoKeywords ?? []),
+        ...titleKeywords(quiz.title),
+        ...quiz.slug.split("-").filter((w) => w.length >= 4),
+        "football quiz",
+        "matchday quiz",
+        "football trivia",
+    ]).slice(0, 18);
 
     return {
-        title: `${quiz.title} — Match Day Play | Goaltrivia`,
-        description: seoLong,
+        title: `${quiz.title} — Match Day Play`,
+        description,
+        keywords: derivedKeywords,
+        alternates: {
+            canonical: `/quiz/${quiz.slug}/play`,
+        },
+        openGraph: {
+            type: "article",
+            url: `/quiz/${quiz.slug}/play`,
+            title: `${quiz.title} — Match Day Play | Goaltrivia`,
+            description,
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: `${quiz.title} — Match Day Play | Goaltrivia`,
+            description,
+        },
     };
 }
 
@@ -142,8 +178,60 @@ export default async function QuizPlayPage({ params }: PageProps) {
         pointsPerCorrect: q.pointsPerCorrect,
     }));
 
+    const structuredData = {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "BreadcrumbList",
+                itemListElement: [
+                    {
+                        "@type": "ListItem",
+                        position: 1,
+                        name: "Home",
+                        item: "https://goaltrivia.com/",
+                    },
+                    {
+                        "@type": "ListItem",
+                        position: 2,
+                        name: "Quizzes",
+                        item: "https://goaltrivia.com/quiz",
+                    },
+                    {
+                        "@type": "ListItem",
+                        position: 3,
+                        name: quiz.title,
+                        item: `https://goaltrivia.com/quiz/${quiz.slug}`,
+                    },
+                    {
+                        "@type": "ListItem",
+                        position: 4,
+                        name: "Match Day Play",
+                        item: `https://goaltrivia.com/quiz/${quiz.slug}/play`,
+                    },
+                ],
+            },
+            {
+                "@type": "WebPage",
+                name: `${quiz.title} — Match Day Play | Goaltrivia`,
+                url: `https://goaltrivia.com/quiz/${quiz.slug}/play`,
+                description: quiz.seoDescription,
+                inLanguage: "en",
+                about: [
+                    { "@type": "Thing", name: quiz.league },
+                    { "@type": "Thing", name: quiz.category },
+                ],
+            },
+        ],
+    };
+
     return (
         <main className="mx-auto max-w-6xl px-6 py-10 sm:py-14">
+            <Script
+                id="quiz-play-structured-data"
+                type="application/ld+json"
+                strategy="afterInteractive"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+            />
             <QuizStartGate quiz={quiz} mode="matchday" allQuizzes={catalog} />
         </main>
     );
