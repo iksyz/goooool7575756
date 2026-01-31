@@ -7,7 +7,7 @@
     "build": "next build",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare build && wrangler deploy",
+    "cf:deploy": "opennextjs-cloudflare build && wrangler deploy --keep-vars --keep-secrets",
     "start": "next start",
     "lint": "eslint"
   },

@@ -117,7 +117,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
         : null;
 
     return (
-        <main className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
+        <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
             <header className="mx-auto max-w-3xl rounded-3xl border border-white/40 bg-white/70 p-6 shadow-[0_18px_60px_rgba(2,44,34,0.18)] backdrop-blur sm:p-8">
                 <h1 className="text-balance text-4xl font-extrabold tracking-tight text-emerald-950 drop-shadow-[0_10px_24px_rgba(2,44,34,0.14)] sm:text-5xl">
                     Leaderboard
@@ -317,7 +317,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
             </section>
 
             {showStickyMe && me && myRank ? (
-                <div className="sticky bottom-4 mt-10">
+                <div className="sticky bottom-4 mt-10 pb-[env(safe-area-inset-bottom)]">
                     <div className="mx-auto max-w-6xl">
                         <div className="overflow-hidden rounded-3xl border border-white/40 bg-white/75 shadow-[0_18px_60px_rgba(2,44,34,0.18)] backdrop-blur">
                             <div

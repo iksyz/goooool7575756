@@ -183,6 +183,18 @@ export function MatchDayQuiz({ quiz, allQuizzes }: MatchDayQuizProps) {
 
     const current = quiz.questions[index];
 
+    function ensureQuestionVisible() {
+        const el = questionTopRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const margin = 96;
+        const viewH = window.innerHeight || 0;
+        const above = rect.top < margin;
+        const below = rect.top > viewH - margin;
+        if (!above && !below) return;
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
     const shuffled = useMemo(() => {
         const seedKey = `${quiz.slug}:${index}`;
         return shuffleOptions(current.options, seedKey);
@@ -249,7 +261,7 @@ export function MatchDayQuiz({ quiz, allQuizzes }: MatchDayQuizProps) {
 
     useEffect(() => {
         if (phase !== "question") return;
-        questionTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        ensureQuestionVisible();
     }, [index, phase]);
 
     useEffect(() => {

@@ -55,7 +55,7 @@ export default function RootLayout({
         ) : null}
       </head>
       <body
-        className={`${inter.variable} antialiased bg-transparent text-emerald-950 font-sans overflow-x-hidden`}
+        className={`${inter.variable} antialiased bg-transparent text-emerald-950 font-sans overflow-x-hidden pb-[env(safe-area-inset-bottom)]`}
       >
         <div className="relative min-h-screen">
           <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">

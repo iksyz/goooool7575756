@@ -8,7 +8,7 @@ export default async function ProfilePage() {
 
     if (!session?.user?.email) {
         return (
-            <main className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
+            <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
                 <div className="mx-auto max-w-2xl rounded-3xl border border-white/40 bg-white/70 p-6 shadow-[0_18px_60px_rgba(2,44,34,0.18)] backdrop-blur sm:p-10">
                     <h1 className="text-3xl font-extrabold tracking-tight text-emerald-950">My Stats</h1>
                     <p className="mt-3 text-emerald-950/75">
@@ -26,7 +26,7 @@ export default async function ProfilePage() {
         : [];
 
     return (
-        <main className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
+        <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
             <header className="mx-auto max-w-3xl rounded-3xl border border-white/40 bg-white/70 p-6 shadow-[0_18px_60px_rgba(2,44,34,0.18)] backdrop-blur sm:p-10">
                 <div className="flex items-center gap-4">
                     {session.user.image ? (

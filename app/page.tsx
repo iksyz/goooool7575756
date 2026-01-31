@@ -50,7 +50,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-transparent text-emerald-950">
-      <main className="relative isolate mx-auto flex max-w-6xl flex-col gap-12 px-6 py-16 sm:py-24">
+      <main className="relative isolate mx-auto flex max-w-6xl flex-col gap-12 px-4 py-14 sm:px-6 sm:py-24">
         <section className="grid items-start gap-10 md:grid-cols-12">
           <div className="md:col-span-7">
             <motion.div
@@ -72,7 +72,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: "easeOut" }}
-                className="relative text-balance text-5xl font-extrabold leading-[1.02] tracking-tight text-emerald-950 drop-shadow-[0_10px_24px_rgba(2,44,34,0.18)] sm:text-6xl"
+                className="relative text-balance text-4xl font-extrabold leading-[1.02] tracking-tight text-emerald-950 drop-shadow-[0_10px_24px_rgba(2,44,34,0.18)] sm:text-6xl"
               >
                 <span className="bg-gradient-to-b from-emerald-950 to-emerald-800 bg-clip-text text-transparent">
                   Test Your Football IQ
@@ -157,7 +157,7 @@ export default function Home() {
                 </CardHeader>
 
                 <CardContent>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     <div className="rounded-2xl bg-stadium-white/90 p-3 shadow-[0_10px_30px_rgba(2,44,34,0.08)]">
                       <div className="text-xs font-semibold text-emerald-950/60">Questions</div>
                       <div className="mt-1 text-lg font-extrabold text-emerald-950">{featuredQuestionCount || "—"}</div>

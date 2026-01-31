@@ -100,6 +100,7 @@ export function QuizStartGate({
     allQuizzes?: QuizCatalogEntry[];
 }) {
     const [started, setStarted] = useState(false);
+    const [showFullSeo, setShowFullSeo] = useState(false);
 
     const questionCount = quiz.questions?.length ?? 0;
     const minutes = questionCount ? Math.max(1, Math.ceil((questionCount * 15) / 60)) : 0;
@@ -175,7 +176,26 @@ export function QuizStartGate({
                     </div>
 
                     <div className="mt-5 rounded-3xl border border-emerald-950/10 bg-white/60 p-5 shadow-[0_18px_60px_rgba(2,44,34,0.08)] backdrop-blur">
-                        <p className="whitespace-pre-line text-base leading-8 text-emerald-950/80">{seoText}</p>
+                        <div className="relative">
+                            <p
+                                className={
+                                    "whitespace-pre-line text-base leading-8 text-emerald-950/80 " +
+                                    (showFullSeo ? "" : "max-h-64 overflow-hidden")
+                                }
+                            >
+                                {seoText}
+                            </p>
+                            {!showFullSeo ? (
+                                <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-white/90" />
+                            ) : null}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowFullSeo((v) => !v)}
+                            className="mt-4 inline-flex items-center justify-center rounded-2xl border border-emerald-950/10 bg-white/70 px-4 py-2 text-sm font-extrabold text-emerald-950/80 shadow-[0_18px_60px_rgba(2,44,34,0.08)] backdrop-blur transition-colors hover:text-pitch-green"
+                        >
+                            {showFullSeo ? "Show less" : "Read more"}
+                        </button>
                     </div>
                 </div>
             </header>

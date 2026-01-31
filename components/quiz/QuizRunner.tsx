@@ -87,6 +87,18 @@ export function QuizRunner({ quiz, allQuizzes }: QuizRunnerProps) {
     const totalMs = 15 * 1000;
     const [remainingMs, setRemainingMs] = useState(totalMs);
 
+    function ensureQuestionVisible() {
+        const el = questionTopRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const margin = 96;
+        const viewH = window.innerHeight || 0;
+        const above = rect.top < margin;
+        const below = rect.top > viewH - margin;
+        if (!above && !below) return;
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
     useEffect(() => {
         if (phase !== "question") return;
 
@@ -120,7 +132,8 @@ export function QuizRunner({ quiz, allQuizzes }: QuizRunnerProps) {
 
     useEffect(() => {
         if (phase !== "question") return;
-        questionTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        ensureQuestionVisible();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [index, phase]);
 
     const current = quiz.questions[index];
