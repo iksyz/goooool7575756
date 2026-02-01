@@ -13,15 +13,13 @@ export const authOptions: NextAuthOptions = {
     },
     // Trust the host header, required for Cloudflare/Vercel behind proxies
     trustHost: true,
+    secret: process.env.NEXTAUTH_SECRET,
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID ?? "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
         }),
     ],
-    pages: {
-        signIn: "/api/auth/signin",
-    },
     callbacks: {
         async session({ session, user }: { session: Session; user: AdapterUser }) {
             if (session.user) {
