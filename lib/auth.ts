@@ -11,6 +11,8 @@ export const authOptions: NextAuthOptions = {
     session: {
         strategy: "database",
     },
+    // Trust the host header, required for Cloudflare/Vercel behind proxies
+    trustHost: true,
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID ?? "",
