@@ -29,6 +29,7 @@ if (!googleClientId || !googleClientSecret) {
 
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
+    secret: process.env.NEXTAUTH_SECRET,
     session: {
         strategy: "database",
     },
@@ -36,7 +37,6 @@ export const authOptions: NextAuthOptions = {
         GoogleProvider({
             clientId: googleClientId ?? "",
             clientSecret: googleClientSecret ?? "",
-            checks: ["pkce", "state"],
         }),
     ],
     callbacks: {
@@ -47,24 +47,19 @@ export const authOptions: NextAuthOptions = {
             return session;
         },
         async redirect({ url, baseUrl }) {
-            // baseUrl'i manuel olarak ayarla
             const siteUrl = getBaseUrl();
             
-            // Redirect döngüsünü önle
+            // Eğer URL zaten siteUrl ile başlıyorsa, olduğu gibi döndür
+            if (url.startsWith(siteUrl)) {
+                return url;
+            }
+            
+            // Relative URL ise siteUrl ile birleştir
             if (url.startsWith("/")) {
                 return `${siteUrl}${url}`;
             }
             
-            // Aynı origin'den geliyorsa izin ver
-            try {
-                const urlObj = new URL(url);
-                if (urlObj.origin === siteUrl) {
-                    return url;
-                }
-            } catch {
-                // URL parse edilemezse siteUrl'e yönlendir
-            }
-            
+            // Diğer durumlarda ana sayfaya yönlendir
             return siteUrl;
         },
         async signIn({ user, account, profile }) {
