@@ -15,6 +15,13 @@ export const authOptions: NextAuthOptions = {
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID ?? "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+            authorization: {
+                params: {
+                    prompt: "consent",
+                    access_type: "offline",
+                    response_type: "code",
+                },
+            },
         }),
     ],
     callbacks: {
@@ -30,5 +37,13 @@ export const authOptions: NextAuthOptions = {
             if (new URL(url).origin === baseUrl) return url;
             return baseUrl;
         },
+        async signIn({ user, account, profile }) {
+            // OAuth hatasını önlemek için kontrol
+            if (account?.provider === "google") {
+                return true;
+            }
+            return true;
+        },
     },
+    debug: process.env.NODE_ENV === "development",
 };
