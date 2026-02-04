@@ -14,9 +14,7 @@ const getBaseUrl = () => {
             .replace(/^["']|["']$/g, "") // Başta ve sonda tırnak işaretlerini kaldır
             .replace(/\/+$/, ""); // Sonundaki slash'leri kaldır
     }
-    if (process.env.VERCEL_URL) {
-        return `https://${process.env.VERCEL_URL}`;
-    }
+    // Cloudflare Pages için fallback
     return "https://goaltrivia.com";
 };
 
@@ -94,6 +92,17 @@ export const authOptions: NextAuthOptions = {
     logger: {
         error(code, metadata) {
             console.error("NextAuth Error:", code, metadata);
+            // OAuthSignin hatası için detaylı log
+            if (code === "OAuthSignin") {
+                console.error("OAuthSignin Error Details:", {
+                    code,
+                    metadata,
+                    clientId: googleClientId?.substring(0, 20) + "...",
+                    baseUrl,
+                    callbackUrl: `${baseUrl}/api/auth/callback/google`,
+                    checkRedirectUri: "Google Cloud Console'da redirect URI'yi kontrol edin",
+                });
+            }
         },
         warn(code) {
             console.warn("NextAuth Warning:", code);
