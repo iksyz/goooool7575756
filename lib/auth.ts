@@ -36,6 +36,7 @@ export const authOptions: NextAuthOptions = {
         GoogleProvider({
             clientId: googleClientId ?? "",
             clientSecret: googleClientSecret ?? "",
+            checks: ["pkce", "state"],
         }),
     ],
     callbacks: {
@@ -67,14 +68,14 @@ export const authOptions: NextAuthOptions = {
             return siteUrl;
         },
         async signIn({ user, account, profile }) {
-            // Debug logging
-            if (process.env.NODE_ENV === "development") {
-                console.log("SignIn callback:", {
-                    userEmail: user?.email,
-                    accountProvider: account?.provider,
-                    accountType: account?.type,
-                });
-            }
+            // Debug logging (production'da da çalışsın)
+            console.log("SignIn callback:", {
+                userEmail: user?.email,
+                accountProvider: account?.provider,
+                accountType: account?.type,
+                hasAccount: !!account,
+                hasProfile: !!profile,
+            });
             // Tüm girişlere izin ver
             return true;
         },
@@ -86,5 +87,16 @@ export const authOptions: NextAuthOptions = {
             return token;
         },
     },
-    debug: process.env.NODE_ENV === "development",
+    debug: true, // Production'da da debug açık olsun
+    logger: {
+        error(code, metadata) {
+            console.error("NextAuth Error:", code, metadata);
+        },
+        warn(code) {
+            console.warn("NextAuth Warning:", code);
+        },
+        debug(code, metadata) {
+            console.log("NextAuth Debug:", code, metadata);
+        },
+    },
 };
