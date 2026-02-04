@@ -17,15 +17,18 @@ export const authOptions: NextAuthOptions = {
             clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
         }),
     ],
-    pages: {
-        signIn: "/api/auth/signin",
-    },
     callbacks: {
         async session({ session, user }: { session: Session; user: AdapterUser }) {
             if (session.user) {
                 (session.user as any).id = user.id;
             }
             return session;
+        },
+        async redirect({ url, baseUrl }) {
+            // Redirect döngüsünü önle
+            if (url.startsWith("/")) return `${baseUrl}${url}`;
+            if (new URL(url).origin === baseUrl) return url;
+            return baseUrl;
         },
     },
 };
