@@ -8,8 +8,8 @@
    - https://console.cloud.google.com/apis/credentials
 
 2. **OAuth client'ınızı bulun:**
-   - Client ID: `731576276483-shhcrcbm6ctajq4ik4fqrf9h5aikr84h`
-   - Name: `goaltriviva`
+   - Client ID: Google Cloud Console'da görüntüleyin
+   - Name: `goaltriviva` (veya oluşturduğunuz isim)
 
 3. **OAuth client'ını açın ve kontrol edin:**
 
@@ -48,11 +48,13 @@
 Cloudflare Pages Dashboard → Settings → Environment Variables:
 
 ```
-GOOGLE_CLIENT_ID=731576276483-shhcrcbm6ctajq4ik4fqrf9h5aikr84h.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=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
+GOOGLE_CLIENT_ID=your-client-id-here.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret-here
 NEXTAUTH_URL=https://goaltrivia.com
-NEXTAUTH_SECRET=FF4EnpuUJj6bqS9qnTrpXDU/KdfByMnJL7I4cUzaHqo=
+NEXTAUTH_SECRET=your-nextauth-secret-here
 ```
+
+**Not:** Gerçek değerleri Cloudflare Pages dashboard'undan kontrol edin. Bu dosyaya asla gerçek secrets yazmayın!
 
 **Önemli:**
 - `NEXTAUTH_URL` sonunda `/` OLMAMALI
