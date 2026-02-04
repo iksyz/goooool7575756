@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-    const nextAuthUrl = process.env.NEXTAUTH_URL;
+    // Tırnak işaretlerini temizle
+    const nextAuthUrlRaw = process.env.NEXTAUTH_URL;
+    const nextAuthUrl = nextAuthUrlRaw 
+        ? nextAuthUrlRaw.replace(/^["']|["']$/g, "").replace(/\/+$/, "")
+        : null;
     const vercelUrl = process.env.VERCEL_URL;
     const baseUrl = nextAuthUrl || (vercelUrl ? `https://${vercelUrl}` : "https://goaltrivia.com");
     const hasClientId = Boolean(process.env.GOOGLE_CLIENT_ID);
@@ -14,6 +18,8 @@ export async function GET() {
     return NextResponse.json({
         ok: true,
         nextAuthUrl: nextAuthUrl || "NOT SET",
+        nextAuthUrlRaw: nextAuthUrlRaw || "NOT SET",
+        hasQuotes: nextAuthUrlRaw ? /^["']|["']$/.test(nextAuthUrlRaw) : false,
         vercelUrl: vercelUrl || "NOT SET",
         baseUrl,
         hasClientId,

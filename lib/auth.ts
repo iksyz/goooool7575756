@@ -9,7 +9,10 @@ import { prisma } from "@/lib/prisma";
 // NEXTAUTH_URL'i kontrol et ve ayarla
 const getBaseUrl = () => {
     if (process.env.NEXTAUTH_URL) {
-        return process.env.NEXTAUTH_URL.replace(/\/+$/, "");
+        // Tırnak işaretlerini ve sonundaki slash'leri temizle
+        return process.env.NEXTAUTH_URL
+            .replace(/^["']|["']$/g, "") // Başta ve sonda tırnak işaretlerini kaldır
+            .replace(/\/+$/, ""); // Sonundaki slash'leri kaldır
     }
     if (process.env.VERCEL_URL) {
         return `https://${process.env.VERCEL_URL}`;
