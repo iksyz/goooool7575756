@@ -6,6 +6,17 @@ import type { Session } from "next-auth";
 
 import { prisma } from "@/lib/prisma";
 
+// NEXTAUTH_URL'i kontrol et ve ayarla
+const getBaseUrl = () => {
+    if (process.env.NEXTAUTH_URL) {
+        return process.env.NEXTAUTH_URL.replace(/\/+$/, "");
+    }
+    if (process.env.VERCEL_URL) {
+        return `https://${process.env.VERCEL_URL}`;
+    }
+    return "https://goaltrivia.com";
+};
+
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
     session: {
@@ -15,13 +26,6 @@ export const authOptions: NextAuthOptions = {
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID ?? "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-            authorization: {
-                params: {
-                    prompt: "consent",
-                    access_type: "offline",
-                    response_type: "code",
-                },
-            },
         }),
     ],
     callbacks: {
@@ -32,16 +36,28 @@ export const authOptions: NextAuthOptions = {
             return session;
         },
         async redirect({ url, baseUrl }) {
+            // baseUrl'i manuel olarak ayarla
+            const siteUrl = getBaseUrl();
+            
             // Redirect döngüsünü önle
-            if (url.startsWith("/")) return `${baseUrl}${url}`;
-            if (new URL(url).origin === baseUrl) return url;
-            return baseUrl;
+            if (url.startsWith("/")) {
+                return `${siteUrl}${url}`;
+            }
+            
+            // Aynı origin'den geliyorsa izin ver
+            try {
+                const urlObj = new URL(url);
+                if (urlObj.origin === siteUrl) {
+                    return url;
+                }
+            } catch {
+                // URL parse edilemezse siteUrl'e yönlendir
+            }
+            
+            return siteUrl;
         },
         async signIn({ user, account, profile }) {
-            // OAuth hatasını önlemek için kontrol
-            if (account?.provider === "google") {
-                return true;
-            }
+            // Tüm girişlere izin ver
             return true;
         },
     },
