@@ -17,6 +17,16 @@ const getBaseUrl = () => {
     return "https://goaltrivia.com";
 };
 
+// Environment variables kontrolü
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+if (!googleClientId || !googleClientSecret) {
+    console.error("Missing Google OAuth credentials!");
+    console.error("GOOGLE_CLIENT_ID:", googleClientId ? "SET" : "MISSING");
+    console.error("GOOGLE_CLIENT_SECRET:", googleClientSecret ? "SET" : "MISSING");
+}
+
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
     session: {
@@ -24,8 +34,8 @@ export const authOptions: NextAuthOptions = {
     },
     providers: [
         GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+            clientId: googleClientId ?? "",
+            clientSecret: googleClientSecret ?? "",
         }),
     ],
     callbacks: {
@@ -57,8 +67,23 @@ export const authOptions: NextAuthOptions = {
             return siteUrl;
         },
         async signIn({ user, account, profile }) {
+            // Debug logging
+            if (process.env.NODE_ENV === "development") {
+                console.log("SignIn callback:", {
+                    userEmail: user?.email,
+                    accountProvider: account?.provider,
+                    accountType: account?.type,
+                });
+            }
             // Tüm girişlere izin ver
             return true;
+        },
+        async jwt({ token, account, profile }) {
+            // JWT callback (eğer JWT kullanılırsa)
+            if (account) {
+                token.accessToken = account.access_token;
+            }
+            return token;
         },
     },
     debug: process.env.NODE_ENV === "development",
