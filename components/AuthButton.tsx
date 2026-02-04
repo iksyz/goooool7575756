@@ -22,7 +22,14 @@ export function AuthButton(props: AuthButtonProps) {
             <Button
                 type="button"
                 variant="secondary"
-                onClick={() => signIn("google")}
+                onClick={() => {
+                    signIn("google", {
+                        callbackUrl: window.location.href,
+                    }).catch((error) => {
+                        console.error("Sign in error:", error);
+                        alert(`Giriş hatası: ${error.message || "Bilinmeyen hata"}`);
+                    });
+                }}
             >
                 Sign In
             </Button>

@@ -20,8 +20,25 @@ export default async function AdminGeneratorPage() {
                         <p className="mb-6 text-sm font-semibold text-emerald-950/70">
                             Admin paneline erişmek için lütfen giriş yapın.
                         </p>
-                        <div className="flex justify-center">
+                        <div className="mb-6 flex justify-center">
                             <AuthButton signedIn={false} />
+                        </div>
+                        <div className="mt-6 rounded-lg border border-emerald-950/20 bg-emerald-950/5 p-4 text-left">
+                            <p className="mb-2 text-xs font-semibold text-emerald-950/80">
+                                Debug Bilgisi:
+                            </p>
+                            <p className="text-xs text-emerald-950/60">
+                                Sorun yaşıyorsanız:{" "}
+                                <a
+                                    href="/api/auth/debug"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 underline"
+                                >
+                                    /api/auth/debug
+                                </a>{" "}
+                                sayfasını kontrol edin.
+                            </p>
                         </div>
                     </div>
                 </main>
