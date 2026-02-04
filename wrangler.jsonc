@@ -16,5 +16,13 @@
       "binding": "WORKER_SELF_REFERENCE",
       "service": "goooool7575756"
     }
-  ]
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "persist": true,
+      "invocation_logs": true
+    }
+  }
 }
