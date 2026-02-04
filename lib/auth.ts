@@ -27,6 +27,8 @@ if (!googleClientId || !googleClientSecret) {
     console.error("GOOGLE_CLIENT_SECRET:", googleClientSecret ? "SET" : "MISSING");
 }
 
+const baseUrl = getBaseUrl();
+
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
     secret: process.env.NEXTAUTH_SECRET,
@@ -46,8 +48,11 @@ export const authOptions: NextAuthOptions = {
             }
             return session;
         },
-        async redirect({ url, baseUrl }) {
-            const siteUrl = getBaseUrl();
+        async redirect({ url, baseUrl: nextAuthBaseUrl }) {
+            // NextAuth'ın sağladığı baseUrl'i kullan, yoksa bizim getBaseUrl()'i kullan
+            const siteUrl = nextAuthBaseUrl || baseUrl;
+            
+            console.log("Redirect callback:", { url, baseUrl: nextAuthBaseUrl, siteUrl });
             
             // Eğer URL zaten siteUrl ile başlıyorsa, olduğu gibi döndür
             if (url.startsWith(siteUrl)) {
