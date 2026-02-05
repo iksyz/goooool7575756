@@ -98,16 +98,19 @@ export const authOptions: NextAuthOptions = {
     debug: true, // Production'da da debug açık olsun
     logger: {
         error(code, metadata) {
-            console.error("NextAuth Error:", code, metadata);
+            console.error("NextAuth Error:", code, JSON.stringify(metadata, null, 2));
             // OAuthSignin hatası için detaylı log
-            if (code === "OAuthSignin") {
+            if (code === "OAuthSignin" || code === "SIGNIN_OAUTH_ERROR") {
                 console.error("OAuthSignin Error Details:", {
                     code,
-                    metadata,
+                    metadata: JSON.stringify(metadata, null, 2),
                     clientId: googleClientId?.substring(0, 20) + "...",
+                    clientIdFull: googleClientId,
                     baseUrl,
                     callbackUrl: `${baseUrl}/api/auth/callback/google`,
+                    nextAuthUrl: process.env.NEXTAUTH_URL,
                     checkRedirectUri: "Google Cloud Console'da redirect URI'yi kontrol edin",
+                    checkGoogleConsole: `https://console.cloud.google.com/apis/credentials?project=YOUR_PROJECT_ID`,
                 });
             }
         },
