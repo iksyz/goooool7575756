@@ -33,6 +33,8 @@ const baseUrl = getBaseUrl();
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
     secret: process.env.NEXTAUTH_SECRET,
+    basePath: "/api/auth",
+    baseUrl: baseUrl,
     session: {
         strategy: "database",
     },
@@ -40,6 +42,13 @@ export const authOptions: NextAuthOptions = {
         GoogleProvider({
             clientId: googleClientId ?? "",
             clientSecret: googleClientSecret ?? "",
+            authorization: {
+                params: {
+                    prompt: "consent",
+                    access_type: "offline",
+                    response_type: "code",
+                },
+            },
         }),
     ],
     callbacks: {
