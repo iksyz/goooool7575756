@@ -33,6 +33,7 @@ const baseUrl = getBaseUrl();
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
     secret: process.env.NEXTAUTH_SECRET,
+    trustHost: true, // Cloudflare Pages için gerekli
     session: {
         strategy: "database",
     },
