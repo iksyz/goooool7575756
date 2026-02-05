@@ -33,8 +33,6 @@ const baseUrl = getBaseUrl();
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
     secret: process.env.NEXTAUTH_SECRET,
-    basePath: "/api/auth",
-    baseUrl: baseUrl,
     session: {
         strategy: "database",
     },
