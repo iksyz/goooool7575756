@@ -8,14 +8,23 @@ import { prisma } from "@/lib/prisma";
 
 // NEXTAUTH_URL'i kontrol et ve ayarla
 const getBaseUrl = () => {
+    // Cloudflare Pages için sabit URL kullan
+    const cloudflareUrl = "https://goaltrivia.com";
+    
     if (process.env.NEXTAUTH_URL) {
         // Tırnak işaretlerini ve sonundaki slash'leri temizle
-        return process.env.NEXTAUTH_URL
+        const cleaned = process.env.NEXTAUTH_URL
             .replace(/^["']|["']$/g, "") // Başta ve sonda tırnak işaretlerini kaldır
             .replace(/\/+$/, ""); // Sonundaki slash'leri kaldır
+        
+        // Eğer temizlenmiş URL goaltrivia.com ile eşleşiyorsa kullan
+        if (cleaned === cloudflareUrl || cleaned.includes("goaltrivia.com")) {
+            return cloudflareUrl;
+        }
+        return cleaned;
     }
     // Cloudflare Pages için fallback
-    return "https://goaltrivia.com";
+    return cloudflareUrl;
 };
 
 // Environment variables kontrolü
@@ -57,10 +66,15 @@ export const authOptions: NextAuthOptions = {
             return session;
         },
         async redirect({ url, baseUrl: nextAuthBaseUrl }) {
-            // NextAuth'ın sağladığı baseUrl'i kullan, yoksa bizim getBaseUrl()'i kullan
-            const siteUrl = nextAuthBaseUrl || baseUrl;
+            // Cloudflare Pages için sabit baseUrl kullan
+            const siteUrl = "https://goaltrivia.com";
             
-            console.log("Redirect callback:", { url, baseUrl: nextAuthBaseUrl, siteUrl });
+            console.log("Redirect callback:", { 
+                url, 
+                baseUrl: nextAuthBaseUrl, 
+                siteUrl,
+                envNextAuthUrl: process.env.NEXTAUTH_URL 
+            });
             
             // Eğer URL zaten siteUrl ile başlıyorsa, olduğu gibi döndür
             if (url.startsWith(siteUrl)) {
@@ -70,6 +84,11 @@ export const authOptions: NextAuthOptions = {
             // Relative URL ise siteUrl ile birleştir
             if (url.startsWith("/")) {
                 return `${siteUrl}${url}`;
+            }
+            
+            // Google OAuth callback URL'i ise siteUrl ile birleştir
+            if (url.includes("/api/auth/callback")) {
+                return `${siteUrl}${url.startsWith("/") ? url : `/${url}`}`;
             }
             
             // Diğer durumlarda ana sayfaya yönlendir
