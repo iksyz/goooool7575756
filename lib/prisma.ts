@@ -1,4 +1,3 @@
-import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
 
 type GlobalForPrisma = {
@@ -22,12 +21,15 @@ if (databaseUrlRaw && /^["']|["']$/.test(databaseUrlRaw)) {
     console.warn("⚠️ DATABASE_URL has quotes! They will be removed automatically.");
 }
 
-const adapter = new PrismaNeon({ connectionString });
-
+// Supabase için normal PrismaClient kullanıyoruz (Session Pooler ile IPv4 uyumlu)
 export const prisma =
     globalForPrisma.prisma ??
     new PrismaClient({
-        adapter,
+        datasources: {
+            db: {
+                url: connectionString,
+            },
+        },
         log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
     });
 
