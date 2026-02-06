@@ -30,9 +30,9 @@ export const authOptions: NextAuthOptions = {
             clientId: googleClientId ?? "",
             clientSecret: googleClientSecret ?? "",
             allowDangerousEmailAccountLinking: true,
-            // PKCE Cloudflare Workers'da çalışmıyor (createCipheriv yok)
-            // Sadece state kontrolü kullan
-            checks: ["state"],
+            // Cloudflare Workers'da crypto sorunları var
+            // Tüm kontrolleri kapat - sorunun yerini bulmak için
+            checks: ["none"],
         }),
     ],
     callbacks: {
@@ -74,7 +74,7 @@ export const authOptions: NextAuthOptions = {
     pages: {
         error: "/api/auth/signin", // Hata sayfası
     },
-    debug: process.env.NODE_ENV !== "production",
+    debug: true, // Her zaman debug açık
     logger: {
         error(code, metadata) {
             console.error("❌ NextAuth Error:", code, JSON.stringify(metadata, null, 2));
@@ -83,9 +83,7 @@ export const authOptions: NextAuthOptions = {
             console.warn("⚠️ NextAuth Warning:", code);
         },
         debug(code, metadata) {
-            if (process.env.NODE_ENV !== "production") {
-                console.log("🔍 NextAuth Debug:", code);
-            }
+            console.log("🔍 NextAuth Debug:", code, JSON.stringify(metadata, null, 2));
         },
     },
 };
