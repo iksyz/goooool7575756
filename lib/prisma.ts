@@ -1,4 +1,6 @@
+import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
+import { neon } from "@neondatabase/serverless";
 
 type GlobalForPrisma = {
     prisma?: PrismaClient;
@@ -21,15 +23,14 @@ if (databaseUrlRaw && /^["']|["']$/.test(databaseUrlRaw)) {
     console.warn("⚠️ DATABASE_URL has quotes! They will be removed automatically.");
 }
 
-// Supabase için normal PrismaClient kullanıyoruz (Session Pooler ile IPv4 uyumlu)
+// Cloudflare Pages için Neon adapter kullanıyoruz (Supabase PostgreSQL ile uyumlu)
+const sql = neon(connectionString);
+const adapter = new PrismaNeon(sql);
+
 export const prisma =
     globalForPrisma.prisma ??
     new PrismaClient({
-        datasources: {
-            db: {
-                url: connectionString,
-            },
-        },
+        adapter,
         log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
     });
 
