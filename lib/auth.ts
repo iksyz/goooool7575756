@@ -85,12 +85,26 @@ if (process.env.NODE_ENV === "production") {
 
 const baseUrl = getBaseUrl();
 
-// JWT mode kullanıyoruz, adapter'a ihtiyacımız yok
-// Adapter Cloudflare Pages'de sorun çıkarabiliyor, bu yüzden kaldırıyoruz
-// Kullanıcıları veritabanına kaydetmek istersen, callback'te manuel olarak yapabilirsin
+// Adapter'ı geri ekliyoruz - kullanıcıları veritabanına kaydetmek için gerekli
+// Ama hataları handle ediyoruz, adapter hatası OAuth'u engellemesin
+let adapter: any = undefined;
+try {
+    if (databaseUrl) {
+        adapter = PrismaAdapter(prisma);
+        console.log("✅ PrismaAdapter initialized successfully");
+    } else {
+        console.warn("⚠️ DATABASE_URL missing - PrismaAdapter cannot be initialized");
+        console.warn("⚠️ NextAuth will work in JWT mode without adapter");
+    }
+} catch (error) {
+    console.error("❌ Failed to initialize PrismaAdapter:", error);
+    console.error("⚠️ NextAuth will work in JWT mode without adapter");
+    // Adapter hatası OAuth'u engellemesin
+    adapter = undefined;
+}
 
 export const authOptions: NextAuthOptions = {
-    // adapter: undefined, // JWT mode için adapter gerekmez ve Cloudflare'de sorun çıkarabilir
+    adapter: adapter, // JWT mode'da opsiyonel ama kullanıcıları kaydetmek için kullanılır
     secret: cleanNextAuthSecret || undefined,
     // Cloudflare Pages için özel ayarlar
     useSecureCookies: process.env.NEXTAUTH_URL?.startsWith("https://") ?? true,
@@ -215,24 +229,23 @@ export const authOptions: NextAuthOptions = {
                 hasProfile: !!profile,
                 profileEmail: (profile as any)?.email,
                 timestamp: new Date().toISOString(),
+                hasAdapter: !!adapter,
             });
 
-            // Google OAuth için özel kontrol - ama false döndürme, sadece log
+            // Google OAuth için özel kontrol
             if (account?.provider === "google") {
                 if (!account.access_token) {
                     console.error("⚠️ Google OAuth: access_token eksik ama devam ediyoruz");
                     console.error("Account object:", JSON.stringify(account, null, 2));
-                    // false döndürmüyoruz çünkü bu OAuthSignin hatasına neden olur
                 }
                 if (!user?.email) {
                     console.error("⚠️ Google OAuth: user email eksik ama devam ediyoruz");
                     console.error("User object:", JSON.stringify(user, null, 2));
-                    // false döndürmüyoruz çünkü bu OAuthSignin hatasına neden olur
                 }
                 console.log("✅ Google OAuth: Giriş onaylandı");
             }
 
-            // Tüm girişlere izin ver - Cloudflare proxy sorunlarını bypass et
+            // Tüm girişlere izin ver - adapter hatası OAuth'u engellemesin
             return true;
         },
         async jwt({ token, account, profile, user, trigger }) {
