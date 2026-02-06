@@ -36,17 +36,14 @@ export default function TestSignInPage() {
                     
                     <div>
                         <h2 className="mb-2 text-lg font-bold text-emerald-950">
-                            3. JavaScript ile
+                            3. Direkt Link (Alternatif Stil)
                         </h2>
-                        <button
-                            onClick={() => {
-                                console.log("Button clicked!");
-                                window.location.href = "/api/auth/signin/google";
-                            }}
+                        <a
+                            href="/api/auth/signin/google"
                             className="inline-block rounded-full bg-green-500 px-6 py-3 text-white font-semibold hover:bg-green-600"
                         >
-                            Google ile Giriş Yap (JavaScript)
-                        </button>
+                            Google ile Giriş Yap (Alternatif)
+                        </a>
                     </div>
                 </div>
                 
