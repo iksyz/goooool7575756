@@ -156,9 +156,20 @@ export const authOptions: NextAuthOptions = {
     ],
     callbacks: {
         async session({ session, token }: { session: Session; token: any }) {
-            // JWT mode için - token'dan user ID'yi al
-            if (session.user && token?.sub) {
-                (session.user as any).id = token.sub;
+            // JWT mode için - token'dan tüm bilgileri al
+            if (session.user) {
+                if (token?.sub) {
+                    (session.user as any).id = token.sub;
+                }
+                if (token?.email) {
+                    session.user.email = token.email;
+                }
+                if (token?.name) {
+                    session.user.name = token.name;
+                }
+                if (token?.picture) {
+                    session.user.image = token.picture;
+                }
             }
             return session;
         },
@@ -232,13 +243,18 @@ export const authOptions: NextAuthOptions = {
                 token.accessToken = account.access_token;
                 token.provider = account.provider;
             }
+            // User bilgilerini token'a ekle (ilk girişte)
             if (user) {
                 token.id = user.id;
                 token.email = user.email;
+                token.name = user.name;
+                token.picture = user.image;
             }
+            // Profile bilgilerini token'a ekle (Google OAuth'dan gelen)
             if (profile) {
-                token.name = (profile as any).name;
-                token.picture = (profile as any).picture;
+                token.email = token.email || (profile as any).email;
+                token.name = token.name || (profile as any).name;
+                token.picture = token.picture || (profile as any).picture;
             }
             return token;
         },
