@@ -4,6 +4,15 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import type { AdapterUser } from "next-auth/adapters";
 import type { Session } from "next-auth";
 
+// DATABASE_URL kontrolü
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+    console.error("❌ CRITICAL: DATABASE_URL is missing!");
+    console.error("NextAuth database adapter requires DATABASE_URL environment variable.");
+    console.error("Please set DATABASE_URL in Cloudflare Pages environment variables.");
+}
+
+// Prisma import - DATABASE_URL yoksa lib/prisma.ts hata fırlatacak
 import { prisma } from "@/lib/prisma";
 
 // NEXTAUTH_URL'i kontrol et ve ayarla
@@ -30,6 +39,12 @@ const getBaseUrl = () => {
 // Environment variables kontrolü
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+const nextAuthSecret = process.env.NEXTAUTH_SECRET;
+const nextAuthUrl = process.env.NEXTAUTH_URL;
+
+// NEXTAUTH_SECRET kontrolü (tırnak işaretlerini temizle)
+const cleanNextAuthSecret = nextAuthSecret?.replace(/^["']|["']$/g, "") || null;
+const cleanNextAuthUrl = nextAuthUrl?.replace(/^["']|["']$/g, "").replace(/\/+$/, "") || null;
 
 if (!googleClientId || !googleClientSecret) {
     console.error("Missing Google OAuth credentials!");
@@ -37,13 +52,59 @@ if (!googleClientId || !googleClientSecret) {
     console.error("GOOGLE_CLIENT_SECRET:", googleClientSecret ? "SET" : "MISSING");
 }
 
+if (!cleanNextAuthSecret) {
+    console.error("⚠️ CRITICAL: NEXTAUTH_SECRET is missing!");
+    console.error("NEXTAUTH_SECRET:", nextAuthSecret ? `SET (but may have quotes: ${nextAuthSecret})` : "MISSING");
+}
+
+if (!cleanNextAuthUrl) {
+    console.error("⚠️ CRITICAL: NEXTAUTH_URL is missing!");
+    console.error("NEXTAUTH_URL:", nextAuthUrl ? `SET (but may have quotes: ${nextAuthUrl})` : "MISSING");
+}
+
+// DATABASE_URL kontrolü
+if (!databaseUrl) {
+    console.error("⚠️ CRITICAL: DATABASE_URL is missing!");
+    console.error("NextAuth database adapter requires DATABASE_URL to store sessions.");
+    console.error("Without DATABASE_URL, Google sign-in will fail!");
+}
+
+// Production ortamında kritik değişkenleri logla
+if (process.env.NODE_ENV === "production") {
+    console.log("🔐 Production Auth Config:", {
+        hasClientId: !!googleClientId,
+        hasClientSecret: !!googleClientSecret,
+        hasNextAuthSecret: !!cleanNextAuthSecret,
+        hasNextAuthUrl: !!cleanNextAuthUrl,
+        hasDatabaseUrl: !!databaseUrl,
+        baseUrl: getBaseUrl(),
+        clientIdPrefix: googleClientId?.substring(0, 20) + "...",
+        databaseUrlPrefix: databaseUrl ? databaseUrl.substring(0, 20) + "..." : "MISSING",
+    });
+}
+
 const baseUrl = getBaseUrl();
 
+// Adapter'ı sadece DATABASE_URL varsa kullan
+let adapter: any = undefined;
+try {
+    if (databaseUrl) {
+        adapter = PrismaAdapter(prisma);
+        console.log("✅ PrismaAdapter initialized successfully");
+    } else {
+        console.error("❌ DATABASE_URL missing - PrismaAdapter cannot be initialized");
+        console.error("⚠️ NextAuth will fail without database adapter!");
+    }
+} catch (error) {
+    console.error("❌ Failed to initialize PrismaAdapter:", error);
+    console.error("Check DATABASE_URL and database connection.");
+}
+
 export const authOptions: NextAuthOptions = {
-    adapter: PrismaAdapter(prisma),
-    secret: process.env.NEXTAUTH_SECRET,
+    adapter: adapter,
+    secret: cleanNextAuthSecret || undefined,
     session: {
-        strategy: "database",
+        strategy: adapter ? "database" : "jwt", // Adapter yoksa JWT kullan
     },
     providers: [
         GoogleProvider({
@@ -56,6 +117,10 @@ export const authOptions: NextAuthOptions = {
                     response_type: "code",
                 },
             },
+            // Debug için client bilgilerini logla
+            ...(process.env.NODE_ENV === "production" && {
+                // Production'da ekstra bilgi
+            }),
         }),
     ],
     callbacks: {
@@ -95,14 +160,37 @@ export const authOptions: NextAuthOptions = {
             return siteUrl;
         },
         async signIn({ user, account, profile }) {
-            // Debug logging (production'da da çalışsın)
-            console.log("SignIn callback:", {
+            // Detaylı debug logging
+            console.log("🔐 SignIn callback triggered:", {
                 userEmail: user?.email,
+                userName: user?.name,
+                userImage: user?.image,
                 accountProvider: account?.provider,
                 accountType: account?.type,
+                accountId: account?.providerAccountId,
+                hasAccessToken: !!account?.access_token,
+                hasRefreshToken: !!account?.refresh_token,
                 hasAccount: !!account,
                 hasProfile: !!profile,
+                profileEmail: (profile as any)?.email,
+                timestamp: new Date().toISOString(),
             });
+
+            // Google OAuth için özel kontrol
+            if (account?.provider === "google") {
+                if (!account.access_token) {
+                    console.error("❌ Google OAuth: access_token eksik!");
+                    console.error("Account object:", JSON.stringify(account, null, 2));
+                    return false;
+                }
+                if (!user?.email) {
+                    console.error("❌ Google OAuth: user email eksik!");
+                    console.error("User object:", JSON.stringify(user, null, 2));
+                    return false;
+                }
+                console.log("✅ Google OAuth: Tüm kontroller geçti, giriş onaylandı");
+            }
+
             // Tüm girişlere izin ver
             return true;
         },
@@ -117,27 +205,46 @@ export const authOptions: NextAuthOptions = {
     debug: true, // Production'da da debug açık olsun
     logger: {
         error(code, metadata) {
-            console.error("NextAuth Error:", code, JSON.stringify(metadata, null, 2));
+            console.error("❌ NextAuth Error:", code, JSON.stringify(metadata, null, 2));
+            
             // OAuthSignin hatası için detaylı log
-            if (code === "OAuthSignin" || code === "SIGNIN_OAUTH_ERROR") {
-                console.error("OAuthSignin Error Details:", {
+            if (code === "OAuthSignin" || code === "SIGNIN_OAUTH_ERROR" || code === "OAuthCallback") {
+                console.error("🔴 OAuthSignin Error Details:", {
                     code,
                     metadata: JSON.stringify(metadata, null, 2),
                     clientId: googleClientId?.substring(0, 20) + "...",
                     clientIdFull: googleClientId,
                     baseUrl,
                     callbackUrl: `${baseUrl}/api/auth/callback/google`,
-                    nextAuthUrl: process.env.NEXTAUTH_URL,
+                    nextAuthUrl: cleanNextAuthUrl || process.env.NEXTAUTH_URL,
+                    nextAuthSecret: cleanNextAuthSecret ? "SET" : "MISSING",
+                    nodeEnv: process.env.NODE_ENV,
                     checkRedirectUri: "Google Cloud Console'da redirect URI'yi kontrol edin",
-                    checkGoogleConsole: `https://console.cloud.google.com/apis/credentials?project=YOUR_PROJECT_ID`,
+                    checkGoogleConsole: `https://console.cloud.google.com/apis/credentials`,
+                    troubleshooting: [
+                        "1. Google Cloud Console'da Authorized redirect URIs'de şu URL olmalı:",
+                        `   ${baseUrl}/api/auth/callback/google`,
+                        "2. NEXTAUTH_SECRET doğru ayarlanmış olmalı (tırnak işareti olmadan)",
+                        "3. NEXTAUTH_URL doğru ayarlanmış olmalı (tırnak işareti olmadan)",
+                        "4. GOOGLE_CLIENT_ID ve GOOGLE_CLIENT_SECRET doğru olmalı",
+                        "5. OAuth consent screen'de test users ekli olmalı",
+                    ],
+                });
+            }
+            
+            // CredentialsSignin hatası
+            if (code === "CredentialsSignin") {
+                console.error("🔴 Credentials Signin Error:", {
+                    code,
+                    metadata: JSON.stringify(metadata, null, 2),
                 });
             }
         },
         warn(code) {
-            console.warn("NextAuth Warning:", code);
+            console.warn("⚠️ NextAuth Warning:", code);
         },
         debug(code, metadata) {
-            console.log("NextAuth Debug:", code, metadata);
+            console.log("🔍 NextAuth Debug:", code, JSON.stringify(metadata, null, 2));
         },
     },
 };
