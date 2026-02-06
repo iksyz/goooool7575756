@@ -105,8 +105,6 @@ export const authOptions: NextAuthOptions = {
     secret: cleanNextAuthSecret || undefined,
     // Cloudflare Pages için özel ayarlar
     useSecureCookies: process.env.NEXTAUTH_URL?.startsWith("https://") ?? true,
-    // Cloudflare proxy arkasında olduğumuz için trust proxy
-    trustHost: true, // Cloudflare Pages için zorunlu
     // Cookies ayarları - Cloudflare için optimize edilmiş
     cookies: {
         sessionToken: {
