@@ -36,19 +36,21 @@ type NavbarMobileMenuProps =
     };
 
 function NavbarMobileSignInButton() {
-    // NextAuth'un kendi signin route'unu kullan - callbackUrl parametresi ile
-    const signInUrl = "/api/auth/signin/google?callbackUrl=/admin/generator";
-
     return (
         <div className="w-full max-w-sm">
-            <a
-                href={signInUrl}
-                className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-r from-yellow-200 via-referee-yellow to-amber-400 px-6 py-5 text-[22px] font-extrabold tracking-tight text-emerald-950 shadow-[0_26px_90px_rgba(250,204,21,0.35)] ring-1 ring-emerald-950/10 transition-transform hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-referee-yellow/60 focus-visible:ring-offset-2"
+            <Button
+                type="button"
+                variant="primary"
+                className="group relative w-full overflow-hidden rounded-3xl bg-gradient-to-r from-yellow-200 via-referee-yellow to-amber-400 px-6 py-5 text-[22px] font-extrabold tracking-tight text-emerald-950 shadow-[0_26px_90px_rgba(250,204,21,0.35)] ring-1 ring-emerald-950/10 transition-transform hover:-translate-y-[1px]"
+                onClick={() => {
+                    const { signIn } = require("next-auth/react");
+                    signIn("google");
+                }}
             >
                 <span className="absolute inset-0 -z-10 bg-gradient-to-b from-white/40 via-transparent to-black/5" />
                 <span className="absolute inset-0 -z-10 -translate-x-full bg-gradient-to-r from-transparent via-white/55 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                 Sign In
-            </a>
+            </Button>
         </div>
     );
 }
