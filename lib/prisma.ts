@@ -1,6 +1,5 @@
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
-import { neon } from "@neondatabase/serverless";
 
 type GlobalForPrisma = {
     prisma?: PrismaClient;
@@ -24,8 +23,8 @@ if (databaseUrlRaw && /^["']|["']$/.test(databaseUrlRaw)) {
 }
 
 // Cloudflare Pages için Neon adapter kullanıyoruz (Supabase PostgreSQL ile uyumlu)
-const sql = neon(connectionString);
-const adapter = new PrismaNeon(sql);
+// PrismaNeon direkt connectionString ile initialize edilir
+const adapter = new PrismaNeon({ connectionString });
 
 export const prisma =
     globalForPrisma.prisma ??
