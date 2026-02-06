@@ -24,12 +24,12 @@ npx prisma db push
 Cloudflare Dashboard → Pages → goaltrivia → Settings → Environment Variables → Production
 
 Şu variable'ların olduğundan emin ol:
-- [ ] `DATABASE_URL` = `postgresql://postgres.rqzjukeskjfaviztzcni:1072%3FEmrE%3F%3F@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true`
+- [ ] `DATABASE_URL` = Supabase Session Pooler connection string (`.env.local` dosyasından kopyala)
 - [ ] `NEXTAUTH_URL` = `https://goaltrivia.com` (sonunda `/` olmamalı, tırnak yok)
-- [ ] `NEXTAUTH_SECRET` = `FF4EnpuUJj6bqS9qnTrpXDU/KdfByMnJL7I4cUzaHqo=` (tırnak yok)
-- [ ] `GOOGLE_CLIENT_ID` = `405208981746-qipip7oe7okutjvp90906vhbhq0c03i6.apps.googleusercontent.com`
-- [ ] `GOOGLE_CLIENT_SECRET` = `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`
-- [ ] `ADMIN_EMAILS` = `emreipekyuz7@gmail.com`
+- [ ] `NEXTAUTH_SECRET` = Rastgele güvenli string (tırnak yok)
+- [ ] `GOOGLE_CLIENT_ID` = Google Cloud Console'dan alınan Client ID
+- [ ] `GOOGLE_CLIENT_SECRET` = Google Cloud Console'dan alınan Client Secret
+- [ ] `ADMIN_EMAILS` = Admin email adresi (virgülle ayrılmış)
 
 ### 3. Cloudflare Dashboard Ayarları
 Cloudflare Dashboard → goaltrivia.com domain'i
