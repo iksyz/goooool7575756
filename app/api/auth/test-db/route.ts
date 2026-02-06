@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+// Cloudflare Pages için Node.js runtime kullan (Prisma için gerekli)
+export const runtime = 'nodejs';
+
 export async function GET() {
     try {
         // DATABASE_URL kontrolü

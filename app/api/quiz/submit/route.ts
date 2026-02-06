@@ -23,6 +23,9 @@ function getMonthKey(date: Date) {
     return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
+// Cloudflare Pages için Node.js runtime kullan (Prisma için gerekli)
+export const runtime = 'nodejs';
+
 export async function POST(req: Request) {
     try {
         const session = await getServerSession(authOptions);

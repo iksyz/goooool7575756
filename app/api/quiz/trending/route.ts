@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
 
+// Cloudflare Pages için Node.js runtime kullan (Prisma için gerekli)
+export const runtime = 'nodejs';
+
 function normalizeCompletedQuizzes(value: unknown): string[] {
     if (Array.isArray(value)) {
         return value.filter((v): v is string => typeof v === "string");
