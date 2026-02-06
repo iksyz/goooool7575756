@@ -5,7 +5,6 @@ import { Poppins } from "next/font/google";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { AuthButton } from "@/components/AuthButton";
 import { NavbarChrome } from "@/components/NavbarChrome";
 import { NavbarLinks } from "@/components/NavbarLinks";
@@ -16,16 +15,8 @@ const brandFont = Poppins({ subsets: ["latin"], weight: ["800"] });
 export async function Navbar() {
     const session = await getServerSession(authOptions);
 
-    const userId = (session?.user as any)?.id as string | undefined;
-    const email = session?.user?.email ?? undefined;
-
-    const user = userId
-        ? await prisma.user.findUnique({ where: { id: userId } })
-        : email
-            ? await prisma.user.findUnique({ where: { email } })
-            : null;
-
-    const points = user?.totalPoints ?? 0;
+    // Points'i şimdilik 0 olarak göster - Prisma Cloudflare'de crash ediyor
+    const points = 0;
 
     return (
         <NavbarChrome>
