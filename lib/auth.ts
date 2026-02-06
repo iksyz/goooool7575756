@@ -1,7 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import type { Session } from "next-auth";
-import { encode, decode } from "@/lib/webcrypto";
 
 // Environment variables
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
@@ -25,17 +24,15 @@ export const authOptions: NextAuthOptions = {
         strategy: "jwt",
         maxAge: 30 * 24 * 60 * 60, // 30 gün
     },
-    // Cloudflare Workers için custom JWT encode/decode
-    // createCipheriv Cloudflare'de çalışmadığı için WebCrypto API kullanıyoruz
-    jwt: {
-        encode,
-        decode,
-    },
+    // JWT ayarları - varsayılan NextAuth encode/decode kullanılır
     providers: [
         GoogleProvider({
             clientId: googleClientId ?? "",
             clientSecret: googleClientSecret ?? "",
             allowDangerousEmailAccountLinking: true,
+            // PKCE Cloudflare Workers'da çalışmıyor (createCipheriv yok)
+            // Sadece state kontrolü kullan
+            checks: ["state"],
         }),
     ],
     callbacks: {
