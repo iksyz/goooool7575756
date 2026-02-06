@@ -85,23 +85,12 @@ if (process.env.NODE_ENV === "production") {
 
 const baseUrl = getBaseUrl();
 
-// Adapter'ı sadece DATABASE_URL varsa kullan
-let adapter: any = undefined;
-try {
-    if (databaseUrl) {
-        adapter = PrismaAdapter(prisma);
-        console.log("✅ PrismaAdapter initialized successfully");
-    } else {
-        console.error("❌ DATABASE_URL missing - PrismaAdapter cannot be initialized");
-        console.error("⚠️ NextAuth will fail without database adapter!");
-    }
-} catch (error) {
-    console.error("❌ Failed to initialize PrismaAdapter:", error);
-    console.error("Check DATABASE_URL and database connection.");
-}
+// JWT mode kullanıyoruz, adapter'a ihtiyacımız yok
+// Adapter Cloudflare Pages'de sorun çıkarabiliyor, bu yüzden kaldırıyoruz
+// Kullanıcıları veritabanına kaydetmek istersen, callback'te manuel olarak yapabilirsin
 
 export const authOptions: NextAuthOptions = {
-    adapter: adapter, // JWT mode'da optional ama kullanıcıları veritabanına kaydetmek için kullanılır
+    // adapter: undefined, // JWT mode için adapter gerekmez ve Cloudflare'de sorun çıkarabilir
     secret: cleanNextAuthSecret || undefined,
     // Cloudflare Pages için özel ayarlar
     useSecureCookies: process.env.NEXTAUTH_URL?.startsWith("https://") ?? true,
@@ -113,9 +102,10 @@ export const authOptions: NextAuthOptions = {
             name: `__Secure-next-auth.session-token`,
             options: {
                 httpOnly: true,
-                sameSite: "lax", // Cloudflare için lax kullan (strict CSRF hatası verebilir)
+                sameSite: "lax", // Cloudflare için lax kullan
                 path: "/",
-                secure: process.env.NEXTAUTH_URL?.startsWith("https://") ?? true,
+                secure: true, // HTTPS zorunlu
+                // domain belirtme - Cloudflare'de sorun çıkarabilir
             },
         },
         callbackUrl: {
@@ -124,7 +114,8 @@ export const authOptions: NextAuthOptions = {
                 httpOnly: true,
                 sameSite: "lax",
                 path: "/",
-                secure: process.env.NEXTAUTH_URL?.startsWith("https://") ?? true,
+                secure: true,
+                // domain belirtme - Cloudflare'de sorun çıkarabilir
             },
         },
         csrfToken: {
@@ -133,7 +124,8 @@ export const authOptions: NextAuthOptions = {
                 httpOnly: true,
                 sameSite: "lax",
                 path: "/",
-                secure: process.env.NEXTAUTH_URL?.startsWith("https://") ?? true,
+                secure: true,
+                // __Host- prefix için domain olmamalı
             },
         },
     },
@@ -154,6 +146,8 @@ export const authOptions: NextAuthOptions = {
                     response_type: "code",
                 },
             },
+            // Cloudflare için özel ayarlar
+            checks: ["pkce", "state"], // PKCE ve state kontrolü aktif
         }),
     ],
     callbacks: {
@@ -241,25 +235,38 @@ export const authOptions: NextAuthOptions = {
             // Tüm girişlere izin ver - Cloudflare proxy sorunlarını bypass et
             return true;
         },
-        async jwt({ token, account, profile, user }) {
+        async jwt({ token, account, profile, user, trigger }) {
             // JWT callback - user bilgilerini token'a ekle
+            console.log("🔑 JWT callback:", {
+                hasAccount: !!account,
+                hasUser: !!user,
+                hasProfile: !!profile,
+                trigger,
+                tokenEmail: token.email,
+            });
+
             if (account) {
                 token.accessToken = account.access_token;
                 token.provider = account.provider;
+                token.refreshToken = account.refresh_token;
+                token.expiresAt = account.expires_at;
             }
+            
             // User bilgilerini token'a ekle (ilk girişte)
             if (user) {
-                token.id = user.id;
-                token.email = user.email;
-                token.name = user.name;
-                token.picture = user.image;
+                token.id = user.id || token.sub;
+                token.email = user.email || token.email;
+                token.name = user.name || token.name;
+                token.picture = user.image || token.picture;
             }
+            
             // Profile bilgilerini token'a ekle (Google OAuth'dan gelen)
             if (profile) {
                 token.email = token.email || (profile as any).email;
                 token.name = token.name || (profile as any).name;
                 token.picture = token.picture || (profile as any).picture;
             }
+            
             return token;
         },
     },
