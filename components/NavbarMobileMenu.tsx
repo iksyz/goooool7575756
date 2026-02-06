@@ -39,7 +39,7 @@ function NavbarMobileSignInButton() {
     return (
         <div className="w-full max-w-sm">
             <a
-                href="/api/auth/signin/google"
+                href="/api/auth/google"
                 className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-r from-yellow-200 via-referee-yellow to-amber-400 px-6 py-5 text-[22px] font-extrabold tracking-tight text-emerald-950 shadow-[0_26px_90px_rgba(250,204,21,0.35)] ring-1 ring-emerald-950/10 transition-transform hover:-translate-y-[1px]"
             >
                 <span className="absolute inset-0 -z-10 bg-gradient-to-b from-white/40 via-transparent to-black/5" />

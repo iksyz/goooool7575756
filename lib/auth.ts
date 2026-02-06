@@ -6,7 +6,6 @@ import type { Session } from "next-auth";
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const nextAuthSecret = process.env.NEXTAUTH_SECRET?.replace(/^["']|["']$/g, "") || undefined;
-const nextAuthUrl = process.env.NEXTAUTH_URL?.replace(/^["']|["']$/g, "").replace(/\/+$/, "") || "https://goaltrivia.com";
 
 // Production log
 if (process.env.NODE_ENV === "production") {
@@ -14,24 +13,93 @@ if (process.env.NODE_ENV === "production") {
         hasClientId: !!googleClientId,
         hasClientSecret: !!googleClientSecret,
         hasSecret: !!nextAuthSecret,
-        nextAuthUrl,
     });
+}
+
+// Custom JWT encode/decode - SubtleCrypto kullanır, Cloudflare'de çalışır
+async function customEncode({ token }: { token: any; secret: string }): Promise<string> {
+    const header = { alg: "HS256", typ: "JWT" };
+    const encodedHeader = base64UrlEncode(JSON.stringify(header));
+    const encodedPayload = base64UrlEncode(JSON.stringify(token));
+    const signingInput = `${encodedHeader}.${encodedPayload}`;
+
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(nextAuthSecret || ""),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+    );
+
+    const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(signingInput));
+    const encodedSignature = base64UrlEncode(
+        String.fromCharCode(...new Uint8Array(signature))
+    );
+
+    return `${signingInput}.${encodedSignature}`;
+}
+
+async function customDecode({ token }: { token: string; secret: string }): Promise<any> {
+    if (!token) return null;
+    try {
+        const parts = token.split(".");
+        if (parts.length !== 3) return null;
+
+        const encoder = new TextEncoder();
+        const key = await crypto.subtle.importKey(
+            "raw",
+            encoder.encode(nextAuthSecret || ""),
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["verify"]
+        );
+
+        const signingInput = `${parts[0]}.${parts[1]}`;
+        const signature = base64UrlDecode(parts[2]);
+        
+        const isValid = await crypto.subtle.verify(
+            "HMAC",
+            key,
+            signature,
+            encoder.encode(signingInput)
+        );
+
+        if (!isValid) return null;
+
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+        return payload;
+    } catch {
+        return null;
+    }
+}
+
+function base64UrlEncode(str: string): string {
+    return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function base64UrlDecode(str: string): Uint8Array {
+    const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
+    const binary = atob(base64);
+    return Uint8Array.from(binary, (c) => c.charCodeAt(0));
 }
 
 export const authOptions: NextAuthOptions = {
     secret: nextAuthSecret,
     session: {
         strategy: "jwt",
-        maxAge: 30 * 24 * 60 * 60, // 30 gün
+        maxAge: 30 * 24 * 60 * 60,
     },
-    // JWT ayarları - varsayılan NextAuth encode/decode kullanılır
+    // Custom JWT - Cloudflare Workers'da createCipheriv yok, SubtleCrypto kullan
+    jwt: {
+        encode: customEncode as any,
+        decode: customDecode as any,
+    },
     providers: [
         GoogleProvider({
             clientId: googleClientId ?? "",
             clientSecret: googleClientSecret ?? "",
             allowDangerousEmailAccountLinking: true,
-            // Cloudflare Workers'da crypto sorunları var
-            // Tüm kontrolleri kapat - sorunun yerini bulmak için
             checks: ["none"],
         }),
     ],
@@ -71,10 +139,7 @@ export const authOptions: NextAuthOptions = {
             return baseUrl;
         },
     },
-    pages: {
-        error: "/api/auth/signin", // Hata sayfası
-    },
-    debug: true, // Her zaman debug açık
+    debug: true,
     logger: {
         error(code, metadata) {
             console.error("❌ NextAuth Error:", code, JSON.stringify(metadata, null, 2));
@@ -83,7 +148,7 @@ export const authOptions: NextAuthOptions = {
             console.warn("⚠️ NextAuth Warning:", code);
         },
         debug(code, metadata) {
-            console.log("🔍 NextAuth Debug:", code, JSON.stringify(metadata, null, 2));
+            console.log("🔍 NextAuth Debug:", code);
         },
     },
 };
