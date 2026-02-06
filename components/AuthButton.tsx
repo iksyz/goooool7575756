@@ -2,6 +2,7 @@
 
 import { signOut } from "next-auth/react";
 import { Trophy } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 
@@ -17,24 +18,25 @@ type AuthButtonProps =
     };
 
 export function AuthButton(props: AuthButtonProps) {
+    const [googleOAuthUrl, setGoogleOAuthUrl] = useState<string>("/api/auth/signin/google");
+
+    useEffect(() => {
+        // Server-side'dan Google OAuth URL'ini al
+        fetch("/api/auth/google-signin-url")
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.url) {
+                    setGoogleOAuthUrl(data.url);
+                }
+            })
+            .catch((error) => {
+                console.error("Failed to get Google OAuth URL:", error);
+                // Fallback: NextAuth route'unu kullan
+                setGoogleOAuthUrl("/api/auth/signin/google");
+            });
+    }, []);
+
     if (!props.signedIn) {
-        // Direkt Google OAuth URL'ini oluştur - NextAuth route'una bağımlı değil
-        // Client ID public bilgi, hardcode edebiliriz
-        const clientId = "405208981746-qipip7oe7okutjvp90906vhbhq0c03i6.apps.googleusercontent.com";
-        const baseUrl = "https://goaltrivia.com";
-        const redirectUri = `${baseUrl}/api/auth/callback/google`;
-        
-        const params = new URLSearchParams({
-            client_id: clientId,
-            redirect_uri: redirectUri,
-            response_type: "code",
-            scope: "openid email profile",
-            access_type: "offline",
-            prompt: "consent",
-        });
-        
-        const googleOAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-        
         return (
             <a
                 href={googleOAuthUrl}
