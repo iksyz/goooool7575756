@@ -31,7 +31,7 @@ FF4EnpuUJj6bqS9qnTrpXDU/KdfByMnJL7I4cUzaHqo=
 **Variable Name:** `GOOGLE_CLIENT_ID`  
 **Value:** 
 ```
-405208981746-qipip7oe7okutjvp90906vhbhq0c03i6.apps.googleusercontent.com
+214173882906-qfpaevjbbb874a0qlg8grq91rahgvngm.apps.googleusercontent.com
 ```
 
 ### 5. GOOGLE_CLIENT_SECRET
@@ -48,14 +48,24 @@ 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
 emreipekyuz7@gmail.com
 ```
 
+### 7. AUTH_TRUST_HOST (Cloudflare Proxy İçin)
+**Variable Name:** `AUTH_TRUST_HOST`  
+**Value:** 
+```
+true
+```
+**ÖNEMLİ:** Bu variable Cloudflare proxy hatasını çözer. NextAuth'un Cloudflare arkasında çalışması için gereklidir!
+
 ---
 
 ## ✅ Kontrol Listesi
 
-- [ ] Tüm 6 variable Cloudflare Pages'e eklendi
+- [ ] Tüm 7 variable Cloudflare Pages'e eklendi
 - [ ] `NEXTAUTH_URL` sonunda `/` yok
 - [ ] `NEXTAUTH_SECRET` tırnak işareti yok
+- [ ] `AUTH_TRUST_HOST=true` eklendi (Cloudflare proxy için kritik!)
 - [ ] `DATABASE_URL` doğru (Session Pooler)
+- [ ] `GOOGLE_CLIENT_ID` güncel (214173882906-qfpaevjbbb874a0qlg8grq91rahgvngm)
 - [ ] Deploy sonrası test edildi
 
 ---
