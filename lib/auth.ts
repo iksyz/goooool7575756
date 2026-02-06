@@ -101,21 +101,52 @@ try {
 }
 
 export const authOptions: NextAuthOptions = {
-    adapter: adapter,
+    adapter: adapter, // JWT mode'da optional ama kullanıcıları veritabanına kaydetmek için kullanılır
     secret: cleanNextAuthSecret || undefined,
     // Cloudflare Pages için özel ayarlar
     useSecureCookies: process.env.NEXTAUTH_URL?.startsWith("https://") ?? true,
     // Cloudflare proxy arkasında olduğumuz için trust proxy
-    // NextAuth v4 otomatik algılar ama manuel eklemek daha güvenli
-    ...(process.env.CF_PAGES || process.env.NEXTAUTH_URL?.includes("goaltrivia.com") ? { trustHost: true } : {}),
+    trustHost: true, // Cloudflare Pages için zorunlu
+    // Cookies ayarları - Cloudflare için optimize edilmiş
+    cookies: {
+        sessionToken: {
+            name: `__Secure-next-auth.session-token`,
+            options: {
+                httpOnly: true,
+                sameSite: "lax", // Cloudflare için lax kullan (strict CSRF hatası verebilir)
+                path: "/",
+                secure: process.env.NEXTAUTH_URL?.startsWith("https://") ?? true,
+            },
+        },
+        callbackUrl: {
+            name: `__Secure-next-auth.callback-url`,
+            options: {
+                httpOnly: true,
+                sameSite: "lax",
+                path: "/",
+                secure: process.env.NEXTAUTH_URL?.startsWith("https://") ?? true,
+            },
+        },
+        csrfToken: {
+            name: `__Host-next-auth.csrf-token`,
+            options: {
+                httpOnly: true,
+                sameSite: "lax",
+                path: "/",
+                secure: process.env.NEXTAUTH_URL?.startsWith("https://") ?? true,
+            },
+        },
+    },
     session: {
-        strategy: adapter ? "database" : "jwt", // Adapter yoksa JWT kullan
+        strategy: "jwt", // JWT mode - veritabanı bağlantı sorunlarını bypass eder
         maxAge: 30 * 24 * 60 * 60, // 30 gün
     },
     providers: [
         GoogleProvider({
             clientId: googleClientId ?? "",
             clientSecret: googleClientSecret ?? "",
+            // Email account linking için - aynı email ile farklı provider'ları bağla
+            allowDangerousEmailAccountLinking: true,
             authorization: {
                 params: {
                     prompt: "consent",
@@ -123,16 +154,13 @@ export const authOptions: NextAuthOptions = {
                     response_type: "code",
                 },
             },
-            // Debug için client bilgilerini logla
-            ...(process.env.NODE_ENV === "production" && {
-                // Production'da ekstra bilgi
-            }),
         }),
     ],
     callbacks: {
-        async session({ session, user }: { session: Session; user: AdapterUser }) {
-            if (session.user) {
-                (session.user as any).id = user.id;
+        async session({ session, token }: { session: Session; token: any }) {
+            // JWT mode için - token'dan user ID'yi al
+            if (session.user && token?.sub) {
+                (session.user as any).id = token.sub;
             }
             return session;
         },
@@ -200,10 +228,19 @@ export const authOptions: NextAuthOptions = {
             // Tüm girişlere izin ver
             return true;
         },
-        async jwt({ token, account, profile }) {
-            // JWT callback (eğer JWT kullanılırsa)
+        async jwt({ token, account, profile, user }) {
+            // JWT callback - user bilgilerini token'a ekle
             if (account) {
                 token.accessToken = account.access_token;
+                token.provider = account.provider;
+            }
+            if (user) {
+                token.id = user.id;
+                token.email = user.email;
+            }
+            if (profile) {
+                token.name = (profile as any).name;
+                token.picture = (profile as any).picture;
             }
             return token;
         },
