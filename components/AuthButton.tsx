@@ -18,21 +18,39 @@ type AuthButtonProps =
 
 export function AuthButton(props: AuthButtonProps) {
     if (!props.signedIn) {
+        const handleSignIn = async (e: React.MouseEvent) => {
+            e.preventDefault();
+            try {
+                console.log("Sign In button clicked");
+                
+                // signIn fonksiyonunun var olduğunu kontrol et
+                if (typeof signIn !== "function") {
+                    console.error("signIn is not a function!");
+                    // Fallback: direkt URL'e yönlendir
+                    window.location.href = "/api/auth/signin/google";
+                    return;
+                }
+                
+                const result = await signIn("google", {
+                    redirect: true,
+                    callbackUrl: window.location.pathname,
+                });
+                
+                console.log("Sign in result:", result);
+            } catch (error: any) {
+                console.error("Sign in error:", error);
+                // Fallback: direkt URL'e yönlendir
+                window.location.href = "/api/auth/signin/google";
+            }
+        };
+        
+        // Hem onClick hem de href ile çalışan buton
         return (
             <Button
-                type="button"
+                as="a"
+                href="/api/auth/signin/google"
                 variant="secondary"
-                onClick={() => {
-                    console.log("Sign In button clicked");
-                    signIn("google")
-                        .then(() => {
-                            console.log("Sign in successful");
-                        })
-                        .catch((error) => {
-                            console.error("Sign in error:", error);
-                            alert(`Giriş hatası: ${error.message || "Bilinmeyen hata"}`);
-                        });
-                }}
+                onClick={handleSignIn}
             >
                 Sign In
             </Button>
