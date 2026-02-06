@@ -146,8 +146,8 @@ export const authOptions: NextAuthOptions = {
                     response_type: "code",
                 },
             },
-            // Cloudflare için özel ayarlar
-            checks: ["pkce", "state"], // PKCE ve state kontrolü aktif
+            // Cloudflare için PKCE kontrolünü kaldır - sorun çıkarabilir
+            // checks: ["pkce", "state"], // PKCE Cloudflare'de sorun çıkarabilir
         }),
     ],
     callbacks: {
