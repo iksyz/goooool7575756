@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn, signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { Trophy } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -18,14 +18,14 @@ type AuthButtonProps =
 
 export function AuthButton(props: AuthButtonProps) {
     if (!props.signedIn) {
+        // Direkt GET link - CSRF token gerektirmez
         return (
-            <Button
-                type="button"
-                variant="secondary"
-                onClick={() => signIn("google")}
+            <a
+                href="/api/auth/signin/google"
+                className="group relative inline-flex items-center justify-center gap-2 h-12 rounded-full px-6 text-sm font-semibold transition-shadow border border-emerald-950/10 bg-white/70 text-emerald-950/85 shadow-[0_10px_30px_rgba(2,44,34,0.10)] backdrop-blur hover:shadow-[0_18px_50px_rgba(2,44,34,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-referee-yellow/60 focus-visible:ring-offset-2"
             >
                 Sign In
-            </Button>
+            </a>
         );
     }
 
