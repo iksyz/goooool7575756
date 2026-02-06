@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn, signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { Trophy } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -18,10 +18,26 @@ type AuthButtonProps =
 
 export function AuthButton(props: AuthButtonProps) {
     if (!props.signedIn) {
-        // Direkt native link kullan - Button component'i bypass et
+        // Direkt Google OAuth URL'ini oluştur - NextAuth route'una bağımlı değil
+        // Client ID public bilgi, hardcode edebiliriz
+        const clientId = "405208981746-qipip7oe7okutjvp90906vhbhq0c03i6.apps.googleusercontent.com";
+        const baseUrl = "https://goaltrivia.com";
+        const redirectUri = `${baseUrl}/api/auth/callback/google`;
+        
+        const params = new URLSearchParams({
+            client_id: clientId,
+            redirect_uri: redirectUri,
+            response_type: "code",
+            scope: "openid email profile",
+            access_type: "offline",
+            prompt: "consent",
+        });
+        
+        const googleOAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+        
         return (
             <a
-                href="/api/auth/signin/google"
+                href={googleOAuthUrl}
                 className="group relative inline-flex items-center justify-center gap-2 h-12 rounded-full px-6 text-sm font-semibold transition-shadow border border-emerald-950/10 bg-white/70 text-emerald-950/85 shadow-[0_10px_30px_rgba(2,44,34,0.10)] backdrop-blur hover:shadow-[0_18px_50px_rgba(2,44,34,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-referee-yellow/60 focus-visible:ring-offset-2"
             >
                 Sign In
