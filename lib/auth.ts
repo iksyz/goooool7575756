@@ -103,8 +103,14 @@ try {
 export const authOptions: NextAuthOptions = {
     adapter: adapter,
     secret: cleanNextAuthSecret || undefined,
+    // Cloudflare Pages için özel ayarlar
+    useSecureCookies: process.env.NEXTAUTH_URL?.startsWith("https://") ?? true,
+    // Cloudflare proxy arkasında olduğumuz için trust proxy
+    // NextAuth v4 otomatik algılar ama manuel eklemek daha güvenli
+    ...(process.env.CF_PAGES || process.env.NEXTAUTH_URL?.includes("goaltrivia.com") ? { trustHost: true } : {}),
     session: {
         strategy: adapter ? "database" : "jwt", // Adapter yoksa JWT kullan
+        maxAge: 30 * 24 * 60 * 60, // 30 gün
     },
     providers: [
         GoogleProvider({
