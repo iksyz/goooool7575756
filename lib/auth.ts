@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import type { Session } from "next-auth";
+import { encode, decode } from "@/lib/webcrypto";
 
 // Environment variables
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
@@ -23,6 +24,12 @@ export const authOptions: NextAuthOptions = {
     session: {
         strategy: "jwt",
         maxAge: 30 * 24 * 60 * 60, // 30 gün
+    },
+    // Cloudflare Workers için custom JWT encode/decode
+    // createCipheriv Cloudflare'de çalışmadığı için WebCrypto API kullanıyoruz
+    jwt: {
+        encode,
+        decode,
     },
     providers: [
         GoogleProvider({
