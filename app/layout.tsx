@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
+import { Providers } from "@/components/providers";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -104,9 +105,11 @@ export default function RootLayout({
             <div className="absolute inset-0 pitch-vignette" />
             <div className="absolute inset-0 bg-stadium-white/55" />
           </div>
-          <Navbar />
-          {children}
-          <Footer />
+          <Providers>
+            <Navbar />
+            {children}
+            <Footer />
+          </Providers>
         </div>
       </body>
     </html>

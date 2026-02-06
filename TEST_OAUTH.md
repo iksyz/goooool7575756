@@ -50,3 +50,4 @@ Bu direkt Google OAuth sayfasına götürmeli.
 - `GOOGLE_CLIENT_ID` doğru olmalı
 - `GOOGLE_CLIENT_SECRET` doğru olmalı
 - `NEXTAUTH_SECRET` doğru olmalı
+
