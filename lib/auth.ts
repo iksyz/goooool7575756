@@ -67,7 +67,7 @@ async function customDecode({ token }: { token: string; secret: string }): Promi
         const isValid = await crypto.subtle.verify(
             "HMAC",
             key,
-            signature,
+            signature.buffer as ArrayBuffer,
             encoder.encode(signingInput)
         );
 
