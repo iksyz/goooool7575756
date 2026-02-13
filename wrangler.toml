@@ -1,0 +1,8 @@
+name = "goal-trivia"
+compatibility_date = "2024-01-01"
+
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "goal-trivia-db"
+database_id = "7971d26b-fc69-4f44-b844-c47eb18bbf96"

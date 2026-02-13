@@ -1,8 +1,7 @@
 /**
  * Database abstraction layer
  * 
- * Cloudflare D1 kullanımına geçiş için hazırlık.
- * Şu anda mock data döndürüyor, ileride D1 binding ile değiştirilecek.
+ * Cloudflare D1 database ile çalışır.
  */
 
 export type User = {
@@ -31,13 +30,18 @@ export type QuizSubmission = {
 
 /**
  * Cloudflare D1 bağlantısı
- * Workers ortamında env.DB üzerinden erişilecek
+ * OpenNext Cloudflare ortamında env.DB üzerinden erişilir
  */
 export function getDb() {
-    // Cloudflare Workers ortamında:
-    // return env.DB
-    
-    // Şimdilik mock
+    try {
+        // @ts-ignore - OpenNext Cloudflare environment
+        if (typeof process !== 'undefined' && process.env?.DB) {
+            // @ts-ignore
+            return process.env.DB;
+        }
+    } catch (e) {
+        console.warn("⚠️ D1 binding not available, using mock mode");
+    }
     return null;
 }
 
@@ -48,9 +52,9 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     const db = getDb();
     
     if (!db) {
-        // Mock data - Cloudflare D1 aktif olmadığı için
+        console.log("📊 getUserByEmail (mock): Returning default user for", email);
         return {
-            id: "mock-user-id",
+            id: `mock-${Buffer.from(email).toString('base64').slice(0, 16)}`,
             email,
             name: null,
             image: null,
@@ -64,13 +68,30 @@ export async function getUserByEmail(email: string): Promise<User | null> {
         };
     }
     
-    // Cloudflare D1 query
-    // const result = await db.prepare(
-    //     "SELECT * FROM users WHERE email = ?"
-    // ).bind(email).first();
-    
-    // return result as User | null;
-    return null;
+    try {
+        const result = await db.prepare(
+            "SELECT * FROM users WHERE email = ?"
+        ).bind(email).first();
+        
+        if (!result) return null;
+        
+        return {
+            id: result.id as string,
+            email: result.email as string,
+            name: result.name as string | null,
+            image: result.image as string | null,
+            totalPoints: (result.totalPoints as number) || 0,
+            weeklyPoints: (result.weeklyPoints as number) || 0,
+            monthlyPoints: (result.monthlyPoints as number) || 0,
+            level: (result.level as string) || "Amateur",
+            completedQuizzes: JSON.parse((result.completedQuizzes as string) || '[]'),
+            createdAt: new Date(result.createdAt as string),
+            updatedAt: new Date(result.updatedAt as string),
+        };
+    } catch (error) {
+        console.error("❌ getUserByEmail D1 error:", error);
+        return null;
+    }
 }
 
 /**
@@ -84,9 +105,9 @@ export async function upsertUser(data: {
     const db = getDb();
     
     if (!db) {
-        // Mock - gerçek DB olmadığı için sadece data döndür
+        console.log("📊 upsertUser (mock):", data.email);
         return {
-            id: "mock-user-id",
+            id: `mock-${Buffer.from(data.email).toString('base64').slice(0, 16)}`,
             email: data.email,
             name: data.name ?? null,
             image: data.image ?? null,
@@ -100,18 +121,23 @@ export async function upsertUser(data: {
         };
     }
     
-    // Cloudflare D1 upsert
-    // await db.prepare(`
-    //     INSERT INTO users (email, name, image, updatedAt)
-    //     VALUES (?, ?, ?, datetime('now'))
-    //     ON CONFLICT(email) DO UPDATE SET
-    //         name = excluded.name,
-    //         image = excluded.image,
-    //         updatedAt = datetime('now')
-    // `).bind(data.email, data.name, data.image).run();
-    
-    // return await getUserByEmail(data.email) as User;
-    return {} as User;
+    try {
+        await db.prepare(`
+            INSERT INTO users (email, name, image, updatedAt)
+            VALUES (?, ?, ?, datetime('now'))
+            ON CONFLICT(email) DO UPDATE SET
+                name = excluded.name,
+                image = excluded.image,
+                updatedAt = datetime('now')
+        `).bind(data.email, data.name ?? null, data.image ?? null).run();
+        
+        const user = await getUserByEmail(data.email);
+        if (!user) throw new Error("Failed to create/update user");
+        return user;
+    } catch (error) {
+        console.error("❌ upsertUser D1 error:", error);
+        throw error;
+    }
 }
 
 /**
@@ -121,29 +147,44 @@ export async function getLeaderboard(scope: "all" | "weekly" | "monthly" = "all"
     const db = getDb();
     
     if (!db) {
-        // Mock - boş array
+        console.log("📊 getLeaderboard (mock): Empty leaderboard");
         return [];
     }
     
-    // Cloudflare D1 query
-    // const orderBy = scope === "weekly" 
-    //     ? "weeklyPoints DESC" 
-    //     : scope === "monthly" 
-    //         ? "monthlyPoints DESC" 
-    //         : "totalPoints DESC";
-    
-    // const results = await db.prepare(`
-    //     SELECT * FROM users
-    //     ORDER BY ${orderBy}, createdAt ASC
-    //     LIMIT 50
-    // `).all();
-    
-    // return results.results as User[];
-    return [];
+    try {
+        const orderBy = scope === "weekly" 
+            ? "weeklyPoints DESC" 
+            : scope === "monthly" 
+                ? "monthlyPoints DESC" 
+                : "totalPoints DESC";
+        
+        const results = await db.prepare(`
+            SELECT * FROM users
+            ORDER BY ${orderBy}, createdAt ASC
+            LIMIT 50
+        `).all();
+        
+        return (results.results || []).map((row: any) => ({
+            id: row.id,
+            email: row.email,
+            name: row.name,
+            image: row.image,
+            totalPoints: row.totalPoints || 0,
+            weeklyPoints: row.weeklyPoints || 0,
+            monthlyPoints: row.monthlyPoints || 0,
+            level: row.level || "Amateur",
+            completedQuizzes: JSON.parse(row.completedQuizzes || '[]'),
+            createdAt: new Date(row.createdAt),
+            updatedAt: new Date(row.updatedAt),
+        }));
+    } catch (error) {
+        console.error("❌ getLeaderboard D1 error:", error);
+        return [];
+    }
 }
 
 /**
- * Quiz sonucu kaydet
+ * Quiz sonucu kaydet ve kullanıcı puanını güncelle
  */
 export async function submitQuiz(data: {
     userId: string;
@@ -154,24 +195,43 @@ export async function submitQuiz(data: {
 }): Promise<void> {
     const db = getDb();
     
+    const points = Math.floor((data.score / data.totalQuestions) * 100);
+    
     if (!db) {
-        // Mock - hiçbir şey yapma
+        console.log(`📝 submitQuiz (mock): ${data.quizSlug}, score: ${data.score}/${data.totalQuestions}, points: ${points}`);
         return;
     }
     
-    // Cloudflare D1 insert
-    // await db.prepare(`
-    //     INSERT INTO quiz_submissions (userId, quizSlug, score, totalQuestions, timeSpent, createdAt)
-    //     VALUES (?, ?, ?, ?, ?, datetime('now'))
-    // `).bind(data.userId, data.quizSlug, data.score, data.totalQuestions, data.timeSpent).run();
-    
-    // Kullanıcının puanını güncelle
-    // const points = Math.floor((data.score / data.totalQuestions) * 100);
-    // await db.prepare(`
-    //     UPDATE users
-    //     SET totalPoints = totalPoints + ?,
-    //         weeklyPoints = weeklyPoints + ?,
-    //         monthlyPoints = monthlyPoints + ?
-    //     WHERE id = ?
-    // `).bind(points, points, points, data.userId).run();
+    try {
+        // Quiz submission kaydet
+        await db.prepare(`
+            INSERT INTO quiz_submissions (userId, quizSlug, score, totalQuestions, timeSpent, createdAt)
+            VALUES (?, ?, ?, ?, ?, datetime('now'))
+        `).bind(data.userId, data.quizSlug, data.score, data.totalQuestions, data.timeSpent).run();
+        
+        // Kullanıcının puanını güncelle
+        await db.prepare(`
+            UPDATE users
+            SET totalPoints = totalPoints + ?,
+                weeklyPoints = weeklyPoints + ?,
+                monthlyPoints = monthlyPoints + ?,
+                updatedAt = datetime('now')
+            WHERE id = ?
+        `).bind(points, points, points, data.userId).run();
+        
+        // Completed quizzes listesini güncelle
+        const user = await db.prepare(`SELECT completedQuizzes FROM users WHERE id = ?`).bind(data.userId).first();
+        if (user) {
+            const completed = JSON.parse((user.completedQuizzes as string) || '[]');
+            if (!completed.includes(data.quizSlug)) {
+                completed.push(data.quizSlug);
+                await db.prepare(`UPDATE users SET completedQuizzes = ? WHERE id = ?`).bind(JSON.stringify(completed), data.userId).run();
+            }
+        }
+        
+        console.log(`✅ Quiz submitted: ${data.quizSlug}, user: ${data.userId}, points: ${points}`);
+    } catch (error) {
+        console.error("❌ submitQuiz D1 error:", error);
+        throw error;
+    }
 }
