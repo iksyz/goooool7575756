@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
             name: userInfo.name,
         });
 
-        // JWT session token oluştur - SubtleCrypto kullan
+        // JWT session token oluştur - NextAuth formatında
         const sessionToken = await createSessionToken({
             email: userInfo.email,
             name: userInfo.name,
@@ -81,22 +81,18 @@ export async function GET(request: NextRequest) {
         // Session cookie'yi ayarla ve yönlendir
         const response = NextResponse.redirect(`${baseUrl}/admin/generator`);
         
-        // NextAuth uyumlu session cookie
-        response.cookies.set("next-auth.session-token", sessionToken, {
+        // Production için __Secure prefix (HTTPS)
+        const isSecure = baseUrl.startsWith("https://");
+        const cookieName = isSecure 
+            ? "__Secure-next-auth.session-token"
+            : "next-auth.session-token";
+        
+        response.cookies.set(cookieName, sessionToken, {
             httpOnly: true,
-            secure: true,
+            secure: isSecure,
             sameSite: "lax",
             path: "/",
             maxAge: 30 * 24 * 60 * 60, // 30 gün
-        });
-
-        // __Secure prefix'li cookie da ekle (HTTPS için)
-        response.cookies.set("__Secure-next-auth.session-token", sessionToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "lax",
-            path: "/",
-            maxAge: 30 * 24 * 60 * 60,
         });
 
         // State cookie'yi temizle
@@ -109,7 +105,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// SubtleCrypto ile JWT oluştur - Cloudflare Workers'da çalışır
+// SubtleCrypto ile JWT oluştur - lib/auth.ts customDecode ile uyumlu
 async function createSessionToken(
     payload: { email: string; name: string; picture: string; sub: string },
     secret: string
@@ -117,8 +113,12 @@ async function createSessionToken(
     const header = { alg: "HS256", typ: "JWT" };
     const now = Math.floor(Date.now() / 1000);
     
+    // NextAuth beklediği exact payload yapısı
     const tokenPayload = {
-        ...payload,
+        email: payload.email,
+        name: payload.name,
+        picture: payload.picture,
+        sub: payload.sub,
         iat: now,
         exp: now + 30 * 24 * 60 * 60, // 30 gün
         jti: crypto.randomUUID(),
@@ -128,7 +128,7 @@ async function createSessionToken(
     const encodedPayload = base64UrlEncode(JSON.stringify(tokenPayload));
     const signingInput = `${encodedHeader}.${encodedPayload}`;
 
-    // HMAC-SHA256 ile imzala
+    // HMAC-SHA256 ile imzala - lib/auth.ts ile aynı method
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
         "raw",

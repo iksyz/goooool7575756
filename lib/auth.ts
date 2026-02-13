@@ -41,10 +41,16 @@ async function customEncode({ token }: { token: any; secret: string }): Promise<
 }
 
 async function customDecode({ token }: { token: string; secret: string }): Promise<any> {
-    if (!token) return null;
+    if (!token) {
+        console.log("🔍 customDecode: No token provided");
+        return null;
+    }
     try {
         const parts = token.split(".");
-        if (parts.length !== 3) return null;
+        if (parts.length !== 3) {
+            console.log("🔍 customDecode: Invalid token format, parts:", parts.length);
+            return null;
+        }
 
         const encoder = new TextEncoder();
         const key = await crypto.subtle.importKey(
@@ -65,11 +71,16 @@ async function customDecode({ token }: { token: string; secret: string }): Promi
             encoder.encode(signingInput)
         );
 
-        if (!isValid) return null;
+        if (!isValid) {
+            console.log("🔍 customDecode: Invalid signature");
+            return null;
+        }
 
         const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+        console.log("✅ customDecode: Token decoded successfully", { email: payload.email, sub: payload.sub });
         return payload;
-    } catch {
+    } catch (error: any) {
+        console.error("❌ customDecode error:", error.message);
         return null;
     }
 }
