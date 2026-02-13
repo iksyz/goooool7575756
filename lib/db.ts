@@ -212,15 +212,27 @@ export async function submitQuiz(data: {
             VALUES (?, ?, ?, ?, ?, datetime('now'))
         `).bind(data.userId, data.quizSlug, data.score, data.totalQuestions, data.timeSpent).run();
         
-        // Kullanıcının puanını güncelle
+        // Kullanıcının toplam puanını al
+        const userResult = await db.prepare(`SELECT totalPoints FROM users WHERE id = ?`).bind(data.userId).first();
+        const currentTotal = (userResult?.totalPoints as number) || 0;
+        const newTotal = currentTotal + points;
+        
+        // Level hesapla
+        const level = 
+            newTotal >= 15000 ? "GOAT" :
+            newTotal >= 5000 ? "WorldClass" :
+            newTotal >= 1000 ? "Professional" : "Amateur";
+        
+        // Kullanıcının puanını ve level'ı güncelle
         await db.prepare(`
             UPDATE users
             SET totalPoints = totalPoints + ?,
                 weeklyPoints = weeklyPoints + ?,
                 monthlyPoints = monthlyPoints + ?,
+                level = ?,
                 updatedAt = datetime('now')
             WHERE id = ?
-        `).bind(points, points, points, data.userId).run();
+        `).bind(points, points, points, level, data.userId).run();
         
         // Completed quizzes listesini güncelle
         const user = await db.prepare(`SELECT completedQuizzes FROM users WHERE id = ?`).bind(data.userId).first();
@@ -232,7 +244,7 @@ export async function submitQuiz(data: {
             }
         }
         
-        console.log(`✅ Quiz submitted: ${data.quizSlug}, user: ${data.userId}, points: ${points}`);
+        console.log(`✅ Quiz submitted: ${data.quizSlug}, user: ${data.userId}, points: ${points}, level: ${level}`);
     } catch (error) {
         console.error("❌ submitQuiz D1 error:", error);
         throw error;
