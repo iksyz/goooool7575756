@@ -1,7 +1,9 @@
 import { readFile, writeFile } from "fs/promises";
 import path from "path";
+import { revalidatePath } from "next/cache";
 
 import { requireAdmin } from "@/lib/admin";
+import { pingAllSearchEngines } from "@/lib/sitemap";
 
 type QuizOption = {
     text: string;
@@ -133,6 +135,24 @@ export async function POST(req: Request) {
         const nextList = [nextQuiz, ...list];
 
         await writeFile(filePath, JSON.stringify(nextList, null, 4) + "\n", "utf8");
+
+        // Sitemap ve quiz sayfalarını revalidate et
+        revalidatePath("/sitemap.xml");
+        revalidatePath("/quiz");
+        revalidatePath(`/quiz/${finalSlug}`);
+        revalidatePath(`/quiz/${finalSlug}/play`);
+        revalidatePath("/"); // Ana sayfa da güncellensin
+
+        console.log(`✅ Quiz saved and revalidated: ${finalSlug}`);
+
+        // Arama motorlarına sitemap güncellendiğini bildir (async, response bekleme)
+        pingAllSearchEngines()
+            .then(result => {
+                console.log("🔔 Sitemap ping results:", result);
+            })
+            .catch(err => {
+                console.error("❌ Sitemap ping error:", err);
+            });
 
         return Response.json({ ok: true, slug: finalSlug });
     } catch (err) {

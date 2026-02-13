@@ -15,10 +15,27 @@ export default function robots(): MetadataRoute.Robots {
         rules: [
             {
                 userAgent: "*",
-                allow: "/",
-                disallow: ["/api/", "/admin"],
+                allow: ["/", "/quiz/", "/leaderboard", "/about"],
+                disallow: [
+                    "/api/",
+                    "/admin/",
+                    "/admin",
+                    "/_next/",
+                    "/profile",
+                ],
+            },
+            {
+                userAgent: "Googlebot",
+                allow: ["/", "/quiz/", "/leaderboard", "/about"],
+                disallow: ["/api/", "/admin/", "/profile"],
+            },
+            {
+                userAgent: "Bingbot",
+                allow: ["/", "/quiz/", "/leaderboard", "/about"],
+                disallow: ["/api/", "/admin/", "/profile"],
             },
         ],
         sitemap: `${siteUrl}/sitemap.xml`,
+        host: siteUrl,
     };
 }
