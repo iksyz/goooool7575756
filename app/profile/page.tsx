@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { getUserByEmail } from "@/lib/db";
 
 export default async function ProfilePage() {
     const session = await getServerSession(authOptions);
@@ -18,14 +19,9 @@ export default async function ProfilePage() {
         );
     }
 
-    // Prisma Cloudflare'de çalışmadığı için mock data kullan
-    const user = {
-        completedQuizzes: [],
-        totalPoints: 0,
-        level: "Amateur",
-    };
-
-    const completed: string[] = [];
+    // D1 abstraction layer kullan
+    const user = await getUserByEmail(session.user.email);
+    const completed = user?.completedQuizzes ?? [];
 
     return (
         <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
@@ -70,7 +66,7 @@ export default async function ProfilePage() {
 
                 <div className="mt-6 rounded-2xl border border-referee-yellow/20 bg-referee-yellow/10 px-4 py-3">
                     <p className="text-xs font-semibold text-emerald-950/70">
-                        📊 Stats tracking is temporarily disabled while we optimize for Cloudflare Workers.
+                        📊 Stats tracking is temporarily disabled. Run D1 setup to enable (see D1_SETUP.md)
                     </p>
                 </div>
             </header>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { encode } from "next-auth/jwt";
+import { upsertUser } from "@/lib/db";
 
 // Google OAuth callback handler
 export async function GET(request: NextRequest) {
@@ -70,6 +71,13 @@ export async function GET(request: NextRequest) {
             name: userInfo.name,
         });
 
+        // Kullanıcıyı D1'e kaydet veya güncelle
+        await upsertUser({
+            email: userInfo.email,
+            name: userInfo.name,
+            image: userInfo.picture,
+        });
+
         // JWT session token oluştur - NextAuth formatında
         const sessionToken = await createSessionToken({
             email: userInfo.email,
@@ -78,8 +86,16 @@ export async function GET(request: NextRequest) {
             sub: userInfo.id,
         }, nextAuthSecret);
 
+        // Admin kontrolü - admin ise /admin/generator, değilse ana sayfa
+        const adminEmails = (process.env.ADMIN_EMAILS ?? "")
+            .split(",")
+            .map(s => s.trim().toLowerCase())
+            .filter(Boolean);
+        const isAdmin = adminEmails.includes(userInfo.email.toLowerCase());
+        const redirectUrl = isAdmin ? `${baseUrl}/admin/generator` : baseUrl;
+
         // Session cookie'yi ayarla ve yönlendir
-        const response = NextResponse.redirect(`${baseUrl}/admin/generator`);
+        const response = NextResponse.redirect(redirectUrl);
         
         // Production için __Secure prefix (HTTPS)
         const isSecure = baseUrl.startsWith("https://");

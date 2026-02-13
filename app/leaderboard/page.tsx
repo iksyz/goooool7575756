@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { Crown, Trophy } from "lucide-react";
 
 import { authOptions } from "@/lib/auth";
+import { getLeaderboard, getUserByEmail } from "@/lib/db";
 
 type LeaderboardScope = "all" | "weekly" | "monthly";
 
@@ -63,14 +64,18 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
     const scopeParam = (await searchParams)?.scope;
     const scope: LeaderboardScope = scopeParam === "weekly" || scopeParam === "monthly" ? scopeParam : "all";
 
-    // Prisma Cloudflare'de çalışmadığı için mock data
-    const top50: LeaderboardUser[] = [];
+    // D1 abstraction layer kullan
+    const top50 = await getLeaderboard(scope);
     const podium = top50.slice(0, 3);
     const rest = top50.slice(3);
-    const me = null;
-    const meInTop50 = -1;
-    const showStickyMe = false;
-    const myRank = null;
+    
+    const userEmail = session?.user?.email;
+    const me = userEmail ? await getUserByEmail(userEmail) : null;
+    const meInTop50 = me ? top50.findIndex((u) => u.id === me.id) : -1;
+    const showStickyMe = !!me && (meInTop50 === -1 || meInTop50 + 1 > 10);
+    
+    // Rank hesaplama (D1'de COUNT query gerekir, şimdilik basit hesap)
+    const myRank = me && meInTop50 !== -1 ? meInTop50 + 1 : null;
 
     return (
         <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
@@ -114,7 +119,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
 
                 <div className="mt-6 rounded-2xl border border-referee-yellow/20 bg-referee-yellow/10 px-4 py-3">
                     <p className="text-xs font-semibold text-emerald-950/70">
-                        🏆 Leaderboard is temporarily disabled while we optimize for Cloudflare Workers.
+                        🏆 Leaderboard ready for D1. Run setup to enable (see D1_SETUP.md)
                     </p>
                 </div>
             </header>
