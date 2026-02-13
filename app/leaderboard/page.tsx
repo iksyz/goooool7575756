@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth";
 import { Crown, Trophy } from "lucide-react";
 
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 
 type LeaderboardScope = "all" | "weekly" | "monthly";
 
@@ -26,12 +25,6 @@ function getScopeLabel(scope: LeaderboardScope) {
     if (scope === "weekly") return "Weekly";
     if (scope === "monthly") return "Monthly";
     return "All Time";
-}
-
-function getOrderBy(scope: LeaderboardScope) {
-    if (scope === "weekly") return [{ weeklyPoints: "desc" as const }, { createdAt: "asc" as const }];
-    if (scope === "monthly") return [{ monthlyPoints: "desc" as const }, { createdAt: "asc" as const }];
-    return [{ totalPoints: "desc" as const }, { createdAt: "asc" as const }];
 }
 
 function getPointsForScope(u: LeaderboardUser, scope: LeaderboardScope) {
@@ -70,51 +63,14 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
     const scopeParam = (await searchParams)?.scope;
     const scope: LeaderboardScope = scopeParam === "weekly" || scopeParam === "monthly" ? scopeParam : "all";
 
-    const top50 = (await prisma.user.findMany({
-        orderBy: getOrderBy(scope),
-        take: 50,
-        select: {
-            id: true,
-            name: true,
-            image: true,
-            totalPoints: true,
-            weeklyPoints: true,
-            monthlyPoints: true,
-            level: true,
-            createdAt: true,
-        },
-    })) as unknown as LeaderboardUser[];
-
+    // Prisma Cloudflare'de çalışmadığı için mock data
+    const top50: LeaderboardUser[] = [];
     const podium = top50.slice(0, 3);
     const rest = top50.slice(3);
-
-    const userId = (session?.user as any)?.id as string | undefined;
-    const userEmail = session?.user?.email ?? undefined;
-    const me = userId
-        ? await prisma.user.findUnique({
-            where: { id: userId },
-            select: { id: true, name: true, image: true, totalPoints: true, weeklyPoints: true, monthlyPoints: true, level: true, createdAt: true },
-        })
-        : userEmail
-            ? await prisma.user.findUnique({
-                where: { email: userEmail },
-                select: { id: true, name: true, image: true, totalPoints: true, weeklyPoints: true, monthlyPoints: true, level: true, createdAt: true },
-            })
-            : null;
-
-    const meInTop50 = me ? top50.findIndex((u) => u.id === me.id) : -1;
-    const showStickyMe = !!me && (meInTop50 === -1 || meInTop50 + 1 > 10);
-
-    const myRank = me
-        ? (await prisma.user.count({
-            where:
-                scope === "weekly"
-                    ? { weeklyPoints: { gt: me.weeklyPoints } }
-                    : scope === "monthly"
-                        ? { monthlyPoints: { gt: me.monthlyPoints } }
-                        : { totalPoints: { gt: me.totalPoints } },
-        })) + 1
-        : null;
+    const me = null;
+    const meInTop50 = -1;
+    const showStickyMe = false;
+    const myRank = null;
 
     return (
         <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
@@ -154,6 +110,12 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
                         <span className="h-2 w-2 rounded-full bg-pitch-green" />
                         Showing: {getScopeLabel(scope)}
                     </div>
+                </div>
+
+                <div className="mt-6 rounded-2xl border border-referee-yellow/20 bg-referee-yellow/10 px-4 py-3">
+                    <p className="text-xs font-semibold text-emerald-950/70">
+                        🏆 Leaderboard is temporarily disabled while we optimize for Cloudflare Workers.
+                    </p>
                 </div>
             </header>
 
@@ -224,7 +186,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
 
                                         <div className="min-w-0">
                                             <div className="truncate text-lg font-extrabold tracking-tight text-emerald-950">
-                                                {u?.name ?? "Anonymous"}
+                                                {u?.name ?? "—"}
                                             </div>
                                             <div className="mt-1 truncate text-sm font-semibold text-emerald-950/60">
                                                 {u ? String(u.level) : ""}
@@ -244,132 +206,6 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
                     })}
                 </div>
             </section>
-
-            <section className="mt-10 overflow-hidden rounded-3xl border border-white/35 bg-white/60 shadow-[0_18px_60px_rgba(2,44,34,0.16)] backdrop-blur">
-                <div className="border-b border-emerald-950/10 bg-emerald-950/[0.02] px-6 py-5">
-                    <div className="flex items-center justify-between">
-                        <div className="text-sm font-semibold tracking-wide text-emerald-950/70">RANKINGS 4–50</div>
-                        <div className="text-xs font-semibold text-emerald-950/60">Hover for glow</div>
-                    </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="min-w-full text-left">
-                        <thead className="bg-emerald-950/[0.02]">
-                            <tr className="text-xs font-semibold tracking-wide text-emerald-950/60">
-                                <th className="px-6 py-4">Rank</th>
-                                <th className="px-6 py-4">Player</th>
-                                <th className="px-6 py-4">Level</th>
-                                <th className="px-6 py-4 text-right">Total Points</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-emerald-950/10">
-                            {rest.map((u, i) => {
-                                const rank = i + 4;
-                                const points = getPointsForScope(u, scope);
-                                const highlight = me && u.id === me.id;
-
-                                return (
-                                    <tr
-                                        key={u.id}
-                                        className={
-                                            "group transition-colors hover:bg-pitch-green/5" +
-                                            (highlight ? " bg-pitch-green/10" : "")
-                                        }
-                                    >
-                                        <td className="px-6 py-4 text-sm font-extrabold text-emerald-950/70">{rank}</td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                {u.image ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img
-                                                        src={u.image}
-                                                        alt={u.name ?? "Player"}
-                                                        className="h-9 w-9 rounded-full border border-white/40 object-cover shadow-[0_10px_24px_rgba(2,44,34,0.12)]"
-                                                        referrerPolicy="no-referrer"
-                                                    />
-                                                ) : (
-                                                    <div className="h-9 w-9 rounded-full bg-emerald-950/10" />
-                                                )}
-                                                <div className="min-w-0">
-                                                    <div className="truncate text-sm font-extrabold text-emerald-950">
-                                                        {u.name ?? "Anonymous"}
-                                                    </div>
-                                                    <div className="truncate text-xs font-semibold text-emerald-950/55">
-                                                        {highlight ? "You" : ""}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm font-semibold text-emerald-950/70">{String(u.level)}</td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="inline-flex items-center justify-end gap-2 rounded-2xl border border-emerald-950/10 bg-stadium-white/80 px-4 py-2 shadow-[0_12px_26px_rgba(2,44,34,0.10)]">
-                                                <Trophy className="h-4 w-4 text-referee-yellow" />
-                                                <span className="text-sm font-extrabold text-emerald-950">{points}</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            {showStickyMe && me && myRank ? (
-                <div className="sticky bottom-4 mt-10 pb-[env(safe-area-inset-bottom)]">
-                    <div className="mx-auto max-w-6xl">
-                        <div className="overflow-hidden rounded-3xl border border-white/40 bg-white/75 shadow-[0_18px_60px_rgba(2,44,34,0.18)] backdrop-blur">
-                            <div
-                                aria-hidden
-                                className="pointer-events-none absolute inset-0 opacity-80"
-                                style={{
-                                    background:
-                                        "radial-gradient(900px circle at 15% 15%, rgba(22,163,74,0.16), transparent 55%), radial-gradient(900px circle at 85% 60%, rgba(37,99,235,0.10), transparent 60%)",
-                                }}
-                            />
-                            <div className="relative flex items-center justify-between gap-4 px-6 py-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="rounded-2xl bg-emerald-950/5 px-4 py-3">
-                                        <div className="text-[10px] font-semibold tracking-wide text-emerald-950/55">YOUR RANK</div>
-                                        <div className="mt-1 text-lg font-extrabold text-emerald-950">#{myRank}</div>
-                                    </div>
-
-                                    <div className="flex items-center gap-3">
-                                        {me.image ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img
-                                                src={me.image}
-                                                alt={me.name ?? "Player"}
-                                                className="h-10 w-10 rounded-full border border-white/40 object-cover"
-                                                referrerPolicy="no-referrer"
-                                            />
-                                        ) : (
-                                            <div className="h-10 w-10 rounded-full bg-emerald-950/10" />
-                                        )}
-                                        <div className="min-w-0">
-                                            <div className="truncate text-sm font-extrabold text-emerald-950">
-                                                {me.name ?? "Player"}
-                                            </div>
-                                            <div className="truncate text-xs font-semibold text-emerald-950/60">
-                                                {String((me as any).level)} • {getScopeLabel(scope)}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="shrink-0 rounded-2xl border border-emerald-950/10 bg-stadium-white/80 px-4 py-3 text-right shadow-[0_12px_26px_rgba(2,44,34,0.10)]">
-                                    <div className="text-[10px] font-semibold tracking-wide text-emerald-950/55">POINTS</div>
-                                    <div className="mt-1 inline-flex items-center gap-2 text-lg font-extrabold text-emerald-950">
-                                        <Trophy className="h-5 w-5 text-referee-yellow" />
-                                        {scope === "weekly" ? me.weeklyPoints : scope === "monthly" ? me.monthlyPoints : me.totalPoints}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ) : null}
         </main>
     );
 }

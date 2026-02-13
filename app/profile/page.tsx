@@ -1,7 +1,6 @@
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 
 export default async function ProfilePage() {
     const session = await getServerSession(authOptions);
@@ -19,11 +18,14 @@ export default async function ProfilePage() {
         );
     }
 
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+    // Prisma Cloudflare'de çalışmadığı için mock data kullan
+    const user = {
+        completedQuizzes: [],
+        totalPoints: 0,
+        level: "Amateur",
+    };
 
-    const completed = Array.isArray(user?.completedQuizzes)
-        ? (user?.completedQuizzes as unknown as string[])
-        : [];
+    const completed: string[] = [];
 
     return (
         <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
@@ -64,6 +66,12 @@ export default async function ProfilePage() {
                         <div className="text-xs font-semibold tracking-wide text-emerald-950/55">RANK</div>
                         <div className="mt-2 text-2xl font-extrabold text-emerald-950">{String(user?.level ?? "Amateur")}</div>
                     </div>
+                </div>
+
+                <div className="mt-6 rounded-2xl border border-referee-yellow/20 bg-referee-yellow/10 px-4 py-3">
+                    <p className="text-xs font-semibold text-emerald-950/70">
+                        📊 Stats tracking is temporarily disabled while we optimize for Cloudflare Workers.
+                    </p>
                 </div>
             </header>
         </main>
