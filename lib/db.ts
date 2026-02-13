@@ -4,6 +4,9 @@
  * Cloudflare D1 database ile çalışır.
  */
 
+// D1Database type definition for TypeScript
+type D1Database = any; // OpenNext Cloudflare runtime type
+
 export type User = {
     id: string;
     email: string;
@@ -32,12 +35,12 @@ export type QuizSubmission = {
  * Cloudflare D1 bağlantısı
  * OpenNext Cloudflare ortamında env.DB üzerinden erişilir
  */
-export function getDb() {
+export function getDb(): D1Database | null {
     try {
         // @ts-ignore - OpenNext Cloudflare environment
         if (typeof process !== 'undefined' && process.env?.DB) {
             // @ts-ignore
-            return process.env.DB;
+            return process.env.DB as D1Database;
         }
     } catch (e) {
         console.warn("⚠️ D1 binding not available, using mock mode");
