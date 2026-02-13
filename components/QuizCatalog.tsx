@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { BarChart3, Flame, Flag, History, Layout, Swords, Trophy, TrophyIcon, Users } from "lucide-react";
+import { BarChart3, Flame, Flag, History, Layout, Search, Swords, Trophy, TrophyIcon, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { QuizCard } from "@/components/QuizCard";
@@ -197,6 +197,7 @@ export function QuizCatalog({
     const [active, setActive] = useState<CatalogCategory>("all");
     const [trending, setTrending] = useState<TrendingEntry[]>([]);
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const [searchQuery, setSearchQuery] = useState("");
 
     const resultsTopRef = useRef<HTMLDivElement | null>(null);
     const didMountRef = useRef(false);
@@ -237,14 +238,41 @@ export function QuizCatalog({
     }, [showTrending]);
 
     const filtered = useMemo(() => {
-        if (active === "all") return quizzes;
-        if (active === "trending") return showTrending ? trendingQuizzes : quizzes;
-        return quizzes.filter((q) => mapQuizToCategory(q) === active);
-    }, [active, quizzes, showTrending, trendingQuizzes]);
+        let result = quizzes;
+        
+        // Kategori filtresi
+        if (active !== "all") {
+            if (active === "trending") {
+                result = showTrending ? trendingQuizzes : quizzes;
+            } else {
+                result = quizzes.filter((q) => mapQuizToCategory(q) === active);
+            }
+        }
+        
+        // Arama filtresi
+        if (searchQuery.trim()) {
+            const query = normalizeText(searchQuery.trim());
+            result = result.filter((q) => {
+                const title = normalizeText(q.title);
+                const league = normalizeText(q.league);
+                const category = normalizeText(q.category);
+                const description = normalizeText(q.seoDescription || "");
+                
+                return (
+                    title.includes(query) ||
+                    league.includes(query) ||
+                    category.includes(query) ||
+                    description.includes(query)
+                );
+            });
+        }
+        
+        return result;
+    }, [active, quizzes, showTrending, trendingQuizzes, searchQuery]);
 
     useEffect(() => {
         setVisibleCount(PAGE_SIZE);
-    }, [active]);
+    }, [active, searchQuery]);
 
     useEffect(() => {
         if (!didMountRef.current) {
@@ -300,6 +328,31 @@ export function QuizCatalog({
             <div className="mt-6 grid items-start gap-6 lg:grid-cols-12">
                 <aside className="lg:col-span-4 self-start">
                     <div className="space-y-4 lg:sticky lg:top-24">
+                        {/* Arama Kutusu */}
+                        <div className="rounded-3xl border border-white/40 bg-white/70 p-5 shadow-[0_18px_60px_rgba(2,44,34,0.10)] backdrop-blur">
+                            <div className="text-xs font-extrabold tracking-widest text-emerald-950/70">SEARCH QUIZZES</div>
+                            <div className="relative mt-4">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-950/40" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by title, league..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full rounded-2xl border border-white/40 bg-white/90 py-3 pl-10 pr-4 text-sm font-semibold text-emerald-950 placeholder-emerald-950/40 shadow-[0_12px_30px_rgba(2,44,34,0.08)] backdrop-blur transition-all focus:border-pitch-green focus:outline-none focus:ring-2 focus:ring-pitch-green/20"
+                                />
+                            </div>
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery("")}
+                                    className="mt-2 text-xs font-semibold text-emerald-950/60 hover:text-pitch-green"
+                                >
+                                    Clear search
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Kategoriler */}
                         <div className="rounded-3xl border border-white/40 bg-white/70 p-5 shadow-[0_18px_60px_rgba(2,44,34,0.10)] backdrop-blur">
                             <div className="text-xs font-extrabold tracking-widest text-emerald-950/70">CATEGORIES</div>
                             <div className="mt-4 grid gap-3">
@@ -369,8 +422,21 @@ export function QuizCatalog({
                     ) : null}
 
                     {!filtered.length ? (
-                        <div className="mt-6 rounded-3xl border border-white/40 bg-white/70 p-6 text-sm font-semibold text-emerald-950/70 shadow-[0_18px_60px_rgba(2,44,34,0.10)] backdrop-blur">
-                            No quizzes found in this category.
+                        <div className="mt-6 rounded-3xl border border-white/40 bg-white/70 p-6 text-center shadow-[0_18px_60px_rgba(2,44,34,0.10)] backdrop-blur">
+                            <p className="text-sm font-semibold text-emerald-950/70">
+                                {searchQuery 
+                                    ? `No quizzes found for "${searchQuery}"`
+                                    : "No quizzes found in this category."}
+                            </p>
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery("")}
+                                    className="mt-3 inline-flex items-center justify-center rounded-2xl border border-white/40 bg-white/70 px-4 py-2 text-sm font-extrabold text-emerald-950/80 transition-colors hover:text-pitch-green"
+                                >
+                                    Clear search
+                                </button>
+                            )}
                         </div>
                     ) : null}
                 </div>
