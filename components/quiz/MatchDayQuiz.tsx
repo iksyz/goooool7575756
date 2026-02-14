@@ -22,7 +22,8 @@ type QuizQuestion = {
 type QuizData = {
     slug: string;
     title: string;
-    league: string;
+    league?: string; // For JSON quizzes (legacy)
+    topic?: string; // For DB quizzes (new)
     category: string;
     difficulty: string;
     seoDescription: string;
@@ -31,7 +32,10 @@ type QuizData = {
     questions: QuizQuestion[];
 };
 
-type QuizCatalogEntry = Pick<QuizData, "slug" | "title" | "league" | "category" | "difficulty" | "pointsPerCorrect">;
+type QuizCatalogEntry = Pick<QuizData, "slug" | "title" | "category" | "difficulty" | "pointsPerCorrect"> & {
+    league?: string;
+    topic?: string;
+};
 
 type Phase = "question" | "feedback" | "result";
 
