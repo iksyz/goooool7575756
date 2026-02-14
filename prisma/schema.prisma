@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -15,26 +15,50 @@ enum UserLevel {
   GOAT
 }
 
+enum QuizStatus {
+  PENDING
+  PUBLISHED
+  REJECTED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum QuizCategory {
+  LEAGUES
+  LEGENDS
+  NOSTALGIA
+  TACTICS
+  NATIONS
+  DERBIES
+  RECORDS
+  TOURNAMENTS
+}
+
 model User {
-  id              String    @id @default(cuid())
-  name            String?   @db.Text
-  email           String?   @unique @db.Text
-  emailVerified   DateTime?
-  image           String?   @db.Text
+  id            String    @id @default(cuid())
+  name          String?   @db.Text
+  email         String?   @unique @db.Text
+  emailVerified DateTime?
+  image         String?   @db.Text
+  role          UserRole  @default(USER)
 
-  totalPoints     Int       @default(0)
-  weeklyPoints    Int       @default(0)
-  weeklyKey       String    @default("") @db.Text
-  monthlyPoints   Int       @default(0)
-  monthlyKey      String    @default("") @db.Text
-  level           UserLevel @default(Amateur)
-  completedQuizzes Json     @default("[]")
+  totalPoints      Int       @default(0)
+  weeklyPoints     Int       @default(0)
+  weeklyKey        String    @default("") @db.Text
+  monthlyPoints    Int       @default(0)
+  monthlyKey       String    @default("") @db.Text
+  level            UserLevel @default(Amateur)
+  completedQuizzes Json      @default("[]")
 
-  accounts        Account[]
-  sessions        Session[]
+  accounts       Account[]
+  sessions       Session[]
+  createdQuizzes UserQuiz[]
 
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Account {
@@ -66,9 +90,36 @@ model Session {
 }
 
 model VerificationToken {
-  identifier String  @db.Text
-  token      String  @unique @db.Text
+  identifier String   @db.Text
+  token      String   @unique @db.Text
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model UserQuiz {
+  id               String       @id @default(cuid())
+  slug             String       @unique @db.Text
+  title            String       @db.Text
+  topic            String       @db.Text
+  category         QuizCategory
+  difficulty       String       @db.Text
+  seoDescription   String       @db.Text
+  seoContent       String       @db.Text
+  seoKeywords      Json
+  pointsPerCorrect Int          @default(15)
+  timeSeconds      Int          @default(15)
+  questions        Json
+  status           QuizStatus   @default(PENDING)
+  rejectionReason  String?      @db.Text
+  aiGenerated      Boolean      @default(true)
+
+  creatorId String
+  creator   User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([creatorId])
 }

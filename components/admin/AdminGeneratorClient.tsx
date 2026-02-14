@@ -13,7 +13,8 @@ type CategoryKey =
     | "Nations"
     | "Derbies"
     | "Records"
-    | "Tournaments";
+    | "Tournaments"
+    | "AI";
 
 type GeneratedQuiz = {
     slug: string;
@@ -209,6 +210,7 @@ export function AdminGeneratorClient() {
                                     <option value="Derbies">Derbies</option>
                                     <option value="Records">Records</option>
                                     <option value="Tournaments">Tournaments</option>
+                                    <option value="AI">AI & Machine Learning</option>
                                 </select>
                                 <select
                                     className="h-12 rounded-2xl border border-emerald-950/10 bg-white/80 px-4 text-sm font-semibold text-emerald-950"

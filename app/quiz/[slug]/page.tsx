@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Script from "next/script";
 
-import quizzes from "@/data/quizzes.json";
 import { QuizStartGate } from "@/components/quiz/QuizStartGate";
+import { getQuizBySlug, getAllQuizzes, type QuizData } from "@/lib/quiz-data";
 
 type QuizOption = {
     text: string;
@@ -16,20 +16,11 @@ type QuizQuestion = {
     correctIndex: number;
 };
 
-type QuizData = {
-    slug: string;
-    title: string;
-    league: string;
-    category: string;
-    difficulty: string;
-    seoDescription: string;
-    seoContent?: string;
-    seoKeywords?: string[];
-    pointsPerCorrect: number;
-    questions: QuizQuestion[];
-};
-
 type QuizCatalogEntry = Pick<QuizData, "slug" | "title" | "league" | "category" | "difficulty" | "pointsPerCorrect">;
+
+type PageProps = {
+    params: Promise<{ slug: string }>;
+};
 
 function titleKeywords(title: string) {
     return title
@@ -103,14 +94,9 @@ type PageProps = {
     params: Promise<{ slug: string }>;
 };
 
-function getQuiz(slug: string): QuizData | undefined {
-    const list = quizzes as unknown as QuizData[];
-    return list.find((q) => q.slug === slug);
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { slug } = await params;
-    const quiz = getQuiz(slug);
+    const quiz = await getQuizBySlug(slug);
 
     if (!quiz) {
         return {
@@ -162,12 +148,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function QuizSlugPage({ params }: PageProps) {
     const { slug } = await params;
-    const quiz = getQuiz(slug);
+    const quiz = await getQuizBySlug(slug);
 
     if (!quiz) notFound();
 
-    const list = quizzes as unknown as QuizData[];
-    const catalog: QuizCatalogEntry[] = list.map((q) => ({
+    const allQuizzes = await getAllQuizzes();
+    const catalog: QuizCatalogEntry[] = allQuizzes.map((q) => ({
         slug: q.slug,
         title: q.title,
         league: q.league,

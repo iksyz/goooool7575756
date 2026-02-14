@@ -5,6 +5,7 @@ import { Goal } from "lucide-react";
 import { QuizCatalog } from "@/components/QuizCatalog";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import { CreateQuizButton } from "@/components/CreateQuizButton";
 import quizzes from "@/data/quizzes.json";
 
 type SeededQuiz = {
@@ -111,6 +112,8 @@ export default function Home() {
                   <Goal className="h-5 w-5" />
                   Start Quiz
                 </Button>
+
+                <CreateQuizButton />
 
                 <Button
                   as={motion.a}

@@ -41,3 +41,6 @@ export const prisma =
 if (process.env.NODE_ENV !== "production") {
     globalForPrisma.prisma = prisma;
 }
+
+// Export helper function for API routes
+export { getPrismaClient };
