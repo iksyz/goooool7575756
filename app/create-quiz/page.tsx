@@ -19,7 +19,7 @@ const CATEGORIES = [
     { value: "TOURNAMENTS", label: "Tournaments", icon: "🏅" },
 ];
 
-export default function CreateQuizAI Page() {
+export default function CreateQuizAIPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const [loading, setLoading] = useState(false);

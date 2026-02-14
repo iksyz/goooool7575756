@@ -143,9 +143,9 @@ export function aiFilter(input: string, foulMessage: string = DEFAULT_FOUL_MESSA
         "disastrous", "shambles", "terrible", "awful", "horrendous", "mediocre", "pointless", "flop", "failure", "howler", 
         
         "baller", "bottle it", "park the bus", "robbery",
-         "rigged", "washed", "fraud", "clinical finisher", "game-changer", "silky", "talisman", "deadwood"
-        "rubbish", "trash", "embarrassing", "catastrophic", "poor", "finished"
-         "upset", "underdog", "miracle", "comeback", "dramatic", "last-minute", "unreal", "breathtaking", "surprising"
+         "rigged", "washed", "fraud", "clinical finisher", "game-changer", "silky", "talisman", "deadwood",
+        "rubbish", "trash", "embarrassing", "catastrophic", "poor", "finished",
+         "upset", "underdog", "miracle", "comeback", "dramatic", "last-minute", "unreal", "breathtaking", "surprising",
          "clutch", "goat", "top-tier", "flawless", "majestic", "prolific"
     ];
 
