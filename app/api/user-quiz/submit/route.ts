@@ -21,10 +21,10 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { title, league, category, difficulty, seoDescription, questions } = body;
+        const { title, topic, category, difficulty, seoDescription, questions } = body;
 
         // Validation
-        if (!title || !league || !category || !difficulty || !seoDescription) {
+        if (!title || !topic || !category || !difficulty || !seoDescription) {
             return NextResponse.json(
                 { error: "Missing required fields" },
                 { status: 400 }
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         }
 
         // AI Filter - check if content is football-related
-        const contentToCheck = `${title} ${league} ${category} ${seoDescription} ${questions
+        const contentToCheck = `${title} ${topic} ${category} ${seoDescription} ${questions
             .map((q: any) => q.question + " " + q.options.map((o: any) => o.text).join(" "))
             .join(" ")}`;
 
@@ -77,17 +77,18 @@ export async function POST(req: NextRequest) {
             data: {
                 slug,
                 title,
-                league,
+                topic,
                 category,
                 difficulty,
                 seoDescription,
                 seoContent: "", // Empty for user-created quizzes
-                seoKeywords: [...keywords, league, category, "football quiz"],
+                seoKeywords: [...keywords, topic, category, "football quiz"],
                 pointsPerCorrect: difficulty === "Easy" ? 10 : difficulty === "Hard" ? 20 : 15,
                 timeSeconds: 15,
                 questions,
                 status: "PENDING",
                 creatorId: user.id,
+                aiGenerated: false,
             },
         });
 
