@@ -63,5 +63,12 @@ export default async function PendingQuizzesPage() {
         orderBy: { createdAt: "desc" },
     });
 
-    return <PendingQuizzesClient quizzes={pendingQuizzes} />;
+    // Serialize dates to strings for client component
+    const serializedQuizzes = pendingQuizzes.map((quiz) => ({
+        ...quiz,
+        category: quiz.category as string,
+        createdAt: quiz.createdAt.toISOString(),
+    }));
+
+    return <PendingQuizzesClient quizzes={serializedQuizzes} />;
 }
