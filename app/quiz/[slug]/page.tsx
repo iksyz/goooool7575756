@@ -90,10 +90,6 @@ function toMetaDescription(input: string) {
     return `${cleaned.slice(0, 157).trim()}...`;
 }
 
-type PageProps = {
-    params: Promise<{ slug: string }>;
-};
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { slug } = await params;
     const quiz = await getQuizBySlug(slug);
